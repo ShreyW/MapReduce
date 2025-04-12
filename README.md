@@ -1,3 +1,5 @@
+# Juan Macias Romero and Shrey Whadawan
+
 # cs6210Project4
 MapReduce Infrastructure
 
