@@ -1,3 +1,17 @@
 syntax = "proto3";
 
 package masterworker;
+
+message TaskRequest {
+  string task_id = 1;
+  string payload = 2; // Could be a chunk of the input file
+}
+
+message TaskResult {
+  string task_id = 1;
+  string result = 2; // Map output (e.g., key-value pairs in string form)
+}
+
+service MasterWorkerService {
+  rpc ExecuteTask(TaskRequest) returns (TaskResult);
+}
