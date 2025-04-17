@@ -3,13 +3,14 @@ syntax = "proto3";
 package masterworker;
 
 message TaskRequest {
-  string task_id = 1;
-  string payload = 2; // Could be a chunk of the input file
+  string task_id = 1;          // Task ID (e.g., "map_0", "reduce_1")
+  string payload = 2;          // Task-specific data (e.g., file shard or intermediate file list)
+  int32 num_reducers = 3;      // Number of reducers (R)
 }
 
 message TaskResult {
-  string task_id = 1;
-  string result = 2; // Map output (e.g., key-value pairs in string form)
+  string task_id = 1;          // Task ID
+  repeated string intermediate_files = 2; // List of intermediate file paths
 }
 
 service MasterWorkerService {
