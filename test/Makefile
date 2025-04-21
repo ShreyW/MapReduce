@@ -67,10 +67,10 @@ RM = /grpc/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /project3
+CMAKE_SOURCE_DIR = /root/aos-p4
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /project3
+CMAKE_BINARY_DIR = /root/aos-p4
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -145,14 +145,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /project3 && $(CMAKE_COMMAND) -E cmake_progress_start /project3/CMakeFiles /project3/test//CMakeFiles/progress.marks
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /project3/CMakeFiles 0
+	cd /root/aos-p4 && $(CMAKE_COMMAND) -E cmake_progress_start /root/aos-p4/CMakeFiles /root/aos-p4/test//CMakeFiles/progress.marks
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/aos-p4/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/clean
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/clean
 .PHONY : clean
 
 # The main clean target
@@ -162,22 +162,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/preinstall
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/preinstall
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /project3 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /root/aos-p4 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 test/CMakeFiles/mrdemo.dir/rule:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/mrdemo.dir/rule
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/mrdemo.dir/rule
 .PHONY : test/CMakeFiles/mrdemo.dir/rule
 
 # Convenience name for target.
@@ -187,12 +187,12 @@ mrdemo: test/CMakeFiles/mrdemo.dir/rule
 
 # fast build rule for target.
 mrdemo/fast:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/build
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/build
 .PHONY : mrdemo/fast
 
 # Convenience name for target.
 test/CMakeFiles/mr_worker.dir/rule:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/mr_worker.dir/rule
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/mr_worker.dir/rule
 .PHONY : test/CMakeFiles/mr_worker.dir/rule
 
 # Convenience name for target.
@@ -202,7 +202,7 @@ mr_worker: test/CMakeFiles/mr_worker.dir/rule
 
 # fast build rule for target.
 mr_worker/fast:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/build
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/build
 .PHONY : mr_worker/fast
 
 main.o: main.cc.o
@@ -211,7 +211,7 @@ main.o: main.cc.o
 
 # target to build an object file
 main.cc.o:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.o
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.o
 .PHONY : main.cc.o
 
 main.i: main.cc.i
@@ -220,7 +220,7 @@ main.i: main.cc.i
 
 # target to preprocess a source file
 main.cc.i:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.i
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.i
 .PHONY : main.cc.i
 
 main.s: main.cc.s
@@ -229,7 +229,7 @@ main.s: main.cc.s
 
 # target to generate assembly for a file
 main.cc.s:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.s
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mrdemo.dir/build.make test/CMakeFiles/mrdemo.dir/main.cc.s
 .PHONY : main.cc.s
 
 user_tasks.o: user_tasks.cc.o
@@ -238,7 +238,7 @@ user_tasks.o: user_tasks.cc.o
 
 # target to build an object file
 user_tasks.cc.o:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.o
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.o
 .PHONY : user_tasks.cc.o
 
 user_tasks.i: user_tasks.cc.i
@@ -247,7 +247,7 @@ user_tasks.i: user_tasks.cc.i
 
 # target to preprocess a source file
 user_tasks.cc.i:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.i
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.i
 .PHONY : user_tasks.cc.i
 
 user_tasks.s: user_tasks.cc.s
@@ -256,7 +256,7 @@ user_tasks.s: user_tasks.cc.s
 
 # target to generate assembly for a file
 user_tasks.cc.s:
-	cd /project3 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.s
+	cd /root/aos-p4 && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/mr_worker.dir/build.make test/CMakeFiles/mr_worker.dir/user_tasks.cc.s
 .PHONY : user_tasks.cc.s
 
 # Help Target
@@ -290,6 +290,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /project3 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /root/aos-p4 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

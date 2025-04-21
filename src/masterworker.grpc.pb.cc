@@ -6,19 +6,19 @@
 #include "masterworker.grpc.pb.h"
 
 #include <functional>
-#include <grpcpp/support/async_stream.h>
-#include <grpcpp/support/async_unary_call.h>
-#include <grpcpp/impl/channel_interface.h>
-#include <grpcpp/impl/client_unary_call.h>
-#include <grpcpp/support/client_callback.h>
-#include <grpcpp/support/message_allocator.h>
-#include <grpcpp/support/method_handler.h>
-#include <grpcpp/impl/rpc_service_method.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/impl/server_callback_handlers.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/impl/service_type.h>
-#include <grpcpp/support/sync_stream.h>
+#include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/codegen/client_unary_call.h>
+#include <grpcpp/impl/codegen/client_callback.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
+#include <grpcpp/impl/codegen/method_handler.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
+#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/sync_stream.h>
 namespace masterworker {
 
 static const char* MasterWorkerService_method_names[] = {
@@ -27,23 +27,23 @@ static const char* MasterWorkerService_method_names[] = {
 
 std::unique_ptr< MasterWorkerService::Stub> MasterWorkerService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
   (void)options;
-  std::unique_ptr< MasterWorkerService::Stub> stub(new MasterWorkerService::Stub(channel, options));
+  std::unique_ptr< MasterWorkerService::Stub> stub(new MasterWorkerService::Stub(channel));
   return stub;
 }
 
-MasterWorkerService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_ExecuteTask_(MasterWorkerService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+MasterWorkerService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
+  : channel_(channel), rpcmethod_ExecuteTask_(MasterWorkerService_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status MasterWorkerService::Stub::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::masterworker::TaskResult* response) {
   return ::grpc::internal::BlockingUnaryCall< ::masterworker::TaskRequest, ::masterworker::TaskResult, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ExecuteTask_, context, request, response);
 }
 
-void MasterWorkerService::Stub::async::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, std::function<void(::grpc::Status)> f) {
+void MasterWorkerService::Stub::experimental_async::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, std::function<void(::grpc::Status)> f) {
   ::grpc::internal::CallbackUnaryCall< ::masterworker::TaskRequest, ::masterworker::TaskResult, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ExecuteTask_, context, request, response, std::move(f));
 }
 
-void MasterWorkerService::Stub::async::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, ::grpc::ClientUnaryReactor* reactor) {
+void MasterWorkerService::Stub::experimental_async::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ExecuteTask_, context, request, response, reactor);
 }
 

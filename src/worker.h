@@ -27,7 +27,7 @@ class Worker : public masterworker::MasterWorkerService::Service {
         std::string ip_addr_port_; // Worker address (ip:port)
 
         // gRPC service implementation
-        grpc::Status ExecuteTask(grpc::ServerContext* context,
+        grpc::Status ExecuteTask(grpc::ServxerContext* context,
                                  const masterworker::TaskRequest* request,
                                  masterworker::TaskResult* response) override;
 
@@ -142,7 +142,7 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
     auto mapper_impl = mapper->impl_;
     
     mapper_impl->set_num_reducers(num_reducers);
-    mapper_impl->set_task_id(task_id);
+    mapper_impl->set_user_id(user_id);
 
     // Process each group of file shards
     process_file_shard(shard, mapper);
@@ -156,7 +156,8 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
 }
 
 /* Process an intermediate file and aggregate key-value pairs */
-void Worker::process_intermediate_file(const std::string& file_name, std::unordered_map<std::string, std::vector<std::string>>& key_value_map) {
+// This takes care of sorting: the intermediate files are already sorted by the key_value_map
+void Worker::process_intermediate_file(const std::string& file_name, std::map<std::string, std::vector<std::string>>& key_value_map) {
     std::ifstream infile(file_name);
     if (!infile.is_open()) {
         std::cerr << "Warning: Unable to open intermediate file " << file_name << std::endl;
@@ -179,19 +180,23 @@ void Worker::process_intermediate_file(const std::string& file_name, std::unorde
 /* Handle reduce tasks */
 void Worker::handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response) {
     std::string payload = request->payload();
+    std::string user_id = request->user_id();
+    std::string output_dir = request->output_dir();
     std::vector<std::string> intermediate_files;
     size_t start = 0, end;
 
     // Parse the payload to extract intermediate file names
-    while ((end = payload.find(',', start)) != std::string::npos) {
+    while ((end = payload.find(';', start)) != std::string::npos) {
         intermediate_files.push_back(payload.substr(start, end - start));
         start = end + 1;
     }
-    intermediate_files.push_back(payload.substr(start));
 
     // Instantiate the reducer
     auto reducer = get_reducer_from_task_factory("cs6210");
+
     auto reducer_impl = reducer->impl_;
+    reducer_impl->set_user_id(user_id);
+    reducer_impl->set_output_dir(output_dir);
 
     // Aggregate key-value pairs from all intermediate files
     std::unordered_map<std::string, std::vector<std::string>> key_value_map;

@@ -15,6 +15,8 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/alarm.h>
 
+std::string const FILE_DIR = "/intermediate";
+
 enum WorkerState {
     AVAILABLE,
     BUSY,
@@ -140,7 +142,7 @@ void Master::assign_map_tasks() {
             // Serialize the FileShard into the payload
             std::string payload;
             for (const auto& segment : shard_group.file_segments) {
-                const std::string& file_name = std::get<0>(segment);
+                const std::string& file_name = FILE_DIR + std::get<0>(segment);
                 size_t start_offset = std::get<1>(segment);
                 size_t end_offset = std::get<2>(segment);
                 payload += file_name + ":" + std::to_string(start_offset) + "-" + std::to_string(end_offset) + ";";
@@ -179,11 +181,11 @@ void Master::assign_reduce_tasks() {
             // Collect intermediate files for this reduce task
             std::string intermediate_files;
             for (int mapper_id = 0; mapper_id < num_mappers; ++mapper_id) {
-                intermediate_files += std::to_string(mapper_id) + "," + std::to_string(reduce_task_id) + ".txt,";
+                intermediate_files += FILE_DIR + std::to_string(mapper_id) + "," + std::to_string(reduce_task_id) + ".txt;";
             }
-            intermediate_files.pop_back(); // Remove trailing comma
             task.set_payload(intermediate_files);
             task.set_user_id(worker.address); // Include user ID
+            task.set_output_dir(spec_.output); // Include output directory
 
             // Asynchronous gRPC call
             auto* call = new AsyncCall;

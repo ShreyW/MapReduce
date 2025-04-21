@@ -7,6 +7,7 @@ message TaskRequest {
   string payload = 2;          // Task-specific data (e.g., file shard or intermediate file list)
   string user_id = 3;          // User ID
   int32 num_reducers = 4;      // Number of reducers (R)
+  string output_dir = 5;       // Output directory
 }
 
 message TaskResult {
