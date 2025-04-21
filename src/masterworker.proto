@@ -5,12 +5,13 @@ package masterworker;
 message TaskRequest {
   string task_id = 1;          // Task ID (e.g., "map_0", "reduce_1")
   string payload = 2;          // Task-specific data (e.g., file shard or intermediate file list)
-  int32 num_reducers = 3;      // Number of reducers (R)
+  int32 user_id = 3;           // User ID
+  int32 num_reducers = 4;      // Number of reducers (R)
 }
 
 message TaskResult {
   string task_id = 1;          // Task ID
-  repeated string intermediate_files = 2; // List of intermediate file paths
+  int32 user_id = 2;           // User ID
 }
 
 service MasterWorkerService {
