@@ -31,7 +31,9 @@ inline constexpr TaskResult::Impl_::Impl_(
       : task_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        user_id_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         _cached_size_{0} {}
 
 template <typename>
@@ -62,7 +64,9 @@ inline constexpr TaskRequest::Impl_::Impl_(
         payload_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        user_id_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         num_reducers_{0},
         _cached_size_{0} {}
 
@@ -130,9 +134,9 @@ const char descriptor_table_protodef_masterworker_2eproto[] ABSL_ATTRIBUTE_SECTI
     protodesc_cold) = {
     "\n\022masterworker.proto\022\014masterworker\"V\n\013Ta"
     "skRequest\022\017\n\007task_id\030\001 \001(\t\022\017\n\007payload\030\002 "
-    "\001(\t\022\017\n\007user_id\030\003 \001(\005\022\024\n\014num_reducers\030\004 \001"
+    "\001(\t\022\017\n\007user_id\030\003 \001(\t\022\024\n\014num_reducers\030\004 \001"
     "(\005\".\n\nTaskResult\022\017\n\007task_id\030\001 \001(\t\022\017\n\007use"
-    "r_id\030\002 \001(\0052Y\n\023MasterWorkerService\022B\n\013Exe"
+    "r_id\030\002 \001(\t2Y\n\023MasterWorkerService\022B\n\013Exe"
     "cuteTask\022\031.masterworker.TaskRequest\032\030.ma"
     "sterworker.TaskResultb\006proto3"
 };
@@ -174,6 +178,7 @@ inline PROTOBUF_NDEBUG_INLINE TaskRequest::Impl_::Impl_(
     const Impl_& from, const ::masterworker::TaskRequest& from_msg)
       : task_id_(arena, from.task_id_),
         payload_(arena, from.payload_),
+        user_id_(arena, from.user_id_),
         _cached_size_{0} {}
 
 TaskRequest::TaskRequest(
@@ -189,13 +194,7 @@ TaskRequest::TaskRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, user_id_),
-           reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, user_id_),
-           offsetof(Impl_, num_reducers_) -
-               offsetof(Impl_, user_id_) +
-               sizeof(Impl_::num_reducers_));
+  _impl_.num_reducers_ = from._impl_.num_reducers_;
 
   // @@protoc_insertion_point(copy_constructor:masterworker.TaskRequest)
 }
@@ -204,16 +203,12 @@ inline PROTOBUF_NDEBUG_INLINE TaskRequest::Impl_::Impl_(
     ::google::protobuf::Arena* arena)
       : task_id_(arena),
         payload_(arena),
+        user_id_(arena),
         _cached_size_{0} {}
 
 inline void TaskRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, user_id_),
-           0,
-           offsetof(Impl_, num_reducers_) -
-               offsetof(Impl_, user_id_) +
-               sizeof(Impl_::num_reducers_));
+  _impl_.num_reducers_ = {};
 }
 TaskRequest::~TaskRequest() {
   // @@protoc_insertion_point(destructor:masterworker.TaskRequest)
@@ -225,6 +220,7 @@ inline void TaskRequest::SharedDtor(MessageLite& self) {
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.task_id_.Destroy();
   this_._impl_.payload_.Destroy();
+  this_._impl_.user_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -264,7 +260,7 @@ const ::google::protobuf::internal::ClassData* TaskRequest::GetClassData() const
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 47, 2> TaskRequest::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 0, 54, 2> TaskRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -291,9 +287,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 47, 2> TaskRequest::_table_ = {
     // string payload = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.payload_)}},
-    // int32 user_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TaskRequest, _impl_.user_id_), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.user_id_)}},
+    // string user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.user_id_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -303,19 +299,20 @@ const ::_pbi::TcParseTable<2, 4, 0, 47, 2> TaskRequest::_table_ = {
     // string payload = 2;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.payload_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // int32 user_id = 3;
+    // string user_id = 3;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.user_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // int32 num_reducers = 4;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.num_reducers_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
   }},
   // no aux_entries
   {{
-    "\30\7\7\0\0\0\0\0"
+    "\30\7\7\7\0\0\0\0"
     "masterworker.TaskRequest"
     "task_id"
     "payload"
+    "user_id"
   }},
 };
 
@@ -328,9 +325,8 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
 
   _impl_.task_id_.ClearToEmpty();
   _impl_.payload_.ClearToEmpty();
-  ::memset(&_impl_.user_id_, 0, static_cast<::size_t>(
-      reinterpret_cast<char*>(&_impl_.num_reducers_) -
-      reinterpret_cast<char*>(&_impl_.user_id_)) + sizeof(_impl_.num_reducers_));
+  _impl_.user_id_.ClearToEmpty();
+  _impl_.num_reducers_ = 0;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -365,11 +361,12 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
             target = stream->WriteStringMaybeAliased(2, _s, target);
           }
 
-          // int32 user_id = 3;
-          if (this_._internal_user_id() != 0) {
-            target = ::google::protobuf::internal::WireFormatLite::
-                WriteInt32ToArrayWithField<3>(
-                    stream, this_._internal_user_id(), target);
+          // string user_id = 3;
+          if (!this_._internal_user_id().empty()) {
+            const std::string& _s = this_._internal_user_id();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "masterworker.TaskRequest.user_id");
+            target = stream->WriteStringMaybeAliased(3, _s, target);
           }
 
           // int32 num_reducers = 4;
@@ -414,10 +411,10 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_payload());
             }
-            // int32 user_id = 3;
-            if (this_._internal_user_id() != 0) {
-              total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
-                  this_._internal_user_id());
+            // string user_id = 3;
+            if (!this_._internal_user_id().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_user_id());
             }
             // int32 num_reducers = 4;
             if (this_._internal_num_reducers() != 0) {
@@ -443,8 +440,8 @@ void TaskRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   if (!from._internal_payload().empty()) {
     _this->_internal_set_payload(from._internal_payload());
   }
-  if (from._internal_user_id() != 0) {
-    _this->_impl_.user_id_ = from._impl_.user_id_;
+  if (!from._internal_user_id().empty()) {
+    _this->_internal_set_user_id(from._internal_user_id());
   }
   if (from._internal_num_reducers() != 0) {
     _this->_impl_.num_reducers_ = from._impl_.num_reducers_;
@@ -467,12 +464,8 @@ void TaskRequest::InternalSwap(TaskRequest* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.task_id_, &other->_impl_.task_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.payload_, &other->_impl_.payload_, arena);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.num_reducers_)
-      + sizeof(TaskRequest::_impl_.num_reducers_)
-      - PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.user_id_)>(
-          reinterpret_cast<char*>(&_impl_.user_id_),
-          reinterpret_cast<char*>(&other->_impl_.user_id_));
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+        swap(_impl_.num_reducers_, other->_impl_.num_reducers_);
 }
 
 ::google::protobuf::Metadata TaskRequest::GetMetadata() const {
@@ -497,6 +490,7 @@ inline PROTOBUF_NDEBUG_INLINE TaskResult::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::masterworker::TaskResult& from_msg)
       : task_id_(arena, from.task_id_),
+        user_id_(arena, from.user_id_),
         _cached_size_{0} {}
 
 TaskResult::TaskResult(
@@ -512,7 +506,6 @@ TaskResult::TaskResult(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.user_id_ = from._impl_.user_id_;
 
   // @@protoc_insertion_point(copy_constructor:masterworker.TaskResult)
 }
@@ -520,11 +513,11 @@ inline PROTOBUF_NDEBUG_INLINE TaskResult::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : task_id_(arena),
+        user_id_(arena),
         _cached_size_{0} {}
 
 inline void TaskResult::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.user_id_ = {};
 }
 TaskResult::~TaskResult() {
   // @@protoc_insertion_point(destructor:masterworker.TaskResult)
@@ -535,6 +528,7 @@ inline void TaskResult::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.task_id_.Destroy();
+  this_._impl_.user_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -574,7 +568,7 @@ const ::google::protobuf::internal::ClassData* TaskResult::GetClassData() const 
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 39, 2> TaskResult::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 46, 2> TaskResult::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -592,9 +586,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 39, 2> TaskResult::_table_ = {
     ::_pbi::TcParser::GetTable<::masterworker::TaskResult>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // int32 user_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(TaskResult, _impl_.user_id_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.user_id_)}},
+    // string user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.user_id_)}},
     // string task_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.task_id_)}},
@@ -604,15 +598,16 @@ const ::_pbi::TcParseTable<1, 2, 0, 39, 2> TaskResult::_table_ = {
     // string task_id = 1;
     {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.task_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // int32 user_id = 2;
+    // string user_id = 2;
     {PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.user_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\27\7\0\0\0\0\0\0"
+    "\27\7\7\0\0\0\0\0"
     "masterworker.TaskResult"
     "task_id"
+    "user_id"
   }},
 };
 
@@ -624,7 +619,7 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
   (void) cached_has_bits;
 
   _impl_.task_id_.ClearToEmpty();
-  _impl_.user_id_ = 0;
+  _impl_.user_id_.ClearToEmpty();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -651,11 +646,12 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
             target = stream->WriteStringMaybeAliased(1, _s, target);
           }
 
-          // int32 user_id = 2;
-          if (this_._internal_user_id() != 0) {
-            target = ::google::protobuf::internal::WireFormatLite::
-                WriteInt32ToArrayWithField<2>(
-                    stream, this_._internal_user_id(), target);
+          // string user_id = 2;
+          if (!this_._internal_user_id().empty()) {
+            const std::string& _s = this_._internal_user_id();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "masterworker.TaskResult.user_id");
+            target = stream->WriteStringMaybeAliased(2, _s, target);
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -688,10 +684,10 @@ PROTOBUF_NOINLINE void TaskResult::Clear() {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_task_id());
             }
-            // int32 user_id = 2;
-            if (this_._internal_user_id() != 0) {
-              total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
-                  this_._internal_user_id());
+            // string user_id = 2;
+            if (!this_._internal_user_id().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_user_id());
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -709,8 +705,8 @@ void TaskResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
   if (!from._internal_task_id().empty()) {
     _this->_internal_set_task_id(from._internal_task_id());
   }
-  if (from._internal_user_id() != 0) {
-    _this->_impl_.user_id_ = from._impl_.user_id_;
+  if (!from._internal_user_id().empty()) {
+    _this->_internal_set_user_id(from._internal_user_id());
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -729,7 +725,7 @@ void TaskResult::InternalSwap(TaskResult* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.task_id_, &other->_impl_.task_id_, arena);
-        swap(_impl_.user_id_, other->_impl_.user_id_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
 }
 
 ::google::protobuf::Metadata TaskResult::GetMetadata() const {

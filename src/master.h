@@ -145,9 +145,9 @@ void Master::assign_map_tasks() {
                 size_t end_offset = std::get<2>(segment);
                 payload += file_name + ":" + std::to_string(start_offset) + "-" + std::to_string(end_offset) + ";";
             }
-            payload.pop_back(); // Remove trailing semicolon
             task.set_payload(payload);
             task.set_num_reducers(spec_.n_output_files); // Include the number of reducers (R)
+            task.set_user_id(worker.address); // Include user ID
 
             // Asynchronous gRPC call
             auto* call = new AsyncCall;
@@ -183,6 +183,7 @@ void Master::assign_reduce_tasks() {
             }
             intermediate_files.pop_back(); // Remove trailing comma
             task.set_payload(intermediate_files);
+            task.set_user_id(worker.address); // Include user ID
 
             // Asynchronous gRPC call
             auto* call = new AsyncCall;

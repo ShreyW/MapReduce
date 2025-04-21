@@ -1,15 +1,18 @@
 #pragma once
 
-#include "mr_task_factory.h"
+#include <mr_task_factory.h>
 #include "mr_tasks.h"
+#include "file_shard.h"
+
 #include "masterworker.grpc.pb.h"
 #include "masterworker.pb.h"
+
 #include <grpcpp/grpcpp.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
-#include "file_shard.h"
+
 
 class Worker : public masterworker::MasterWorkerService::Service {
 
@@ -33,15 +36,19 @@ class Worker : public masterworker::MasterWorkerService::Service {
         void handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response);
             
         // Reading of files and calling user-defined functions
-        void Worker::process_file_shard(std::vector<FileShard> shard_group, BaseMapper mapper){
+        void process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> mapper);
         void process_intermediate_file(const std::string& file_name, std::unordered_map<std::string, std::vector<std::string>>& key_value_map);
 };
 
 
 /* CS6210_TASK: ip_addr_port is the only information you get when started.
     You can populate your other class data members here if you want */
-Worker::Worker(std::string ip_addr_port) : ip_addr_port_(std::move(ip_addr_port)) {}
+Worker::Worker(std::string ip_addr_port){
+    ip_addr_port_ = ip_addr_port;
+}
 
+extern std::shared_ptr<BaseMapper> get_mapper_from_task_factory(const std::string& user_id);
+extern std::shared_ptr<BaseReducer> get_reducer_from_task_factory(const std::string& user_id);
 
 /* CS6210_TASK: Here you go. once this function is called your worker's job is to keep looking for new tasks 
     from Master, complete when given one and again keep looking for the next one.
@@ -55,6 +62,8 @@ bool Worker::run() {
     grpc::ServerBuilder builder;
     builder.AddListeningPort(ip_addr_port_, grpc::InsecureServerCredentials());
     builder.RegisterService(this);
+
+    // Heartbeat missing
 
     std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
     std::cout << "Worker listening on " << ip_addr_port_ << std::endl;
@@ -83,21 +92,25 @@ grpc::Status Worker::ExecuteTask(grpc::ServerContext* context,
 }
 
 // Call map on every line of the file shard
-void Worker::process_file_shard(std::vector<FileShard> shard_group, BaseMapper mapper){
-    for (const auto& shard : shard_group) {
-        std::ifstream file(shard.file_name, std::ios::binary);
+void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> mapper){
+    for (const auto& file_segment : shard.file_segments) {
+        std::string filename = std::get<0>(file_segment);
+        size_t start_offset = std::get<1>(file_segment);
+        size_t end_offset = std::get<2>(file_segment);
+
+        std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "Error: Unable to open file " << shard.file_name << std::endl;
+            std::cerr << "Error: Unable to open file " << filename << std::endl;
             continue;
         }
 
-        file.seekg(shard.start_offset, std::ios::beg);
+        file.seekg(start_offset, std::ios::beg);
         std::string line;
         while (std::getline(file, line)) {
-            if (file.tellg() > shard.end_offset) {
+            if (file.tellg() > end_offset) {
                 break; // Stop reading if we exceed the end offset
             }
-            mapper.map(line);
+            mapper->map(line);
         }
         file.close();
     }
@@ -109,84 +122,37 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
     int num_reducers = request->num_reducers();
 
     // Parse the payload to extract multiple groups of file shards
-    std::vector<std::vector<FileShard>> shard_groups;
-    size_t group_start = 0, group_end;
-    while ((group_end = payload.find('|', group_start)) != std::string::npos) { // Groups separated by '|'
-        std::string group = payload.substr(group_start, group_end - group_start);
-        std::vector<FileShard> shard_group;
-
-        size_t shard_start = 0, shard_end;
-        while ((shard_end = group.find(';', shard_start)) != std::string::npos) { // Shards separated by ';'
-            std::string shard_info = group.substr(shard_start, shard_end - shard_start);
-            size_t colon_pos = shard_info.find(':');
-            size_t dash_pos = shard_info.find('-');
-            std::string file_name = shard_info.substr(0, colon_pos);
-            size_t start_offset = std::stoul(shard_info.substr(colon_pos + 1, dash_pos - colon_pos - 1));
-            size_t end_offset = std::stoul(shard_info.substr(dash_pos + 1));
-            shard_group.push_back(FileShard{file_name, start_offset, end_offset});
-            shard_start = shard_end + 1;
-        }
-
-        shard_groups.push_back(shard_group);
-        group_start = group_end + 1;
+    // payload structure: filename1:start_offset1-end_offset1;filename2:start_offset2-end_offset2;...
+    FileShard shard;
+    size_t shard_start = 0, shard_end;
+    while ((shard_end = payload.find(';', shard_start)) != std::string::npos) { // Shards separated by ';'
+        std::string shard_info = payload.substr(shard_start, shard_end - shard_start);
+        size_t colon_pos = shard_info.find(':');
+        size_t dash_pos = shard_info.find('-');
+        std::string file_name = shard_info.substr(0, colon_pos);
+        size_t start_offset = std::stoul(shard_info.substr(colon_pos + 1, dash_pos));
+        size_t end_offset = std::stoul(shard_info.substr(dash_pos + 1, shard_end-1));
+        shard.file_segments.emplace_back(file_name, start_offset, end_offset);
+        shard_start = shard_end + 1;
     }
 
     // Extract mapper ID from task_id
     int task_id = std::stoi(request->task_id().substr(4));
-    BaseMapper mapper = get_mapper_from_task_factory("cs6210");
-    mapper.set_num_reducers(num_reducers);
-    mapper.set_task_id(task_id);
+    auto mapper = get_mapper_from_task_factory("cs6210");
+    auto mapper_impl = mapper->impl_;
+    
+    mapper_impl->set_num_reducers(num_reducers);
+    mapper_impl->set_task_id(task_id);
 
     // Process each group of file shards
-    for (const auto& shard_group : shard_groups) {
-        process_file_shard(shard_group, mapper);
-    }
+    process_file_shard(shard, mapper);
 
     // Flush the emit buffer to write intermediate files to disk
-    mapper.flush_emit_buffer();
-
-    // Collect intermediate file names
-    for (int i = 0; i < num_reducers; ++i) {
-        response->add_intermediate_files("map_" + std::to_string(task_id) + "_" + std::to_string(i) + ".txt");
-    }
+    mapper_impl->flush_emit_buffer();
 
     response->set_task_id(request->task_id());
     response->set_user_id(request->user_id());
     std::cout << "Map task completed: " << request->task_id() << std::endl;
-}
-
-
-/* Handle reduce tasks */
-void Worker::handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response) {
-    std::string payload = request->payload();
-    std::vector<std::string> intermediate_files;
-    size_t start = 0, end;
-
-    // Parse the payload to extract intermediate file names
-    while ((end = payload.find(',', start)) != std::string::npos) {
-        intermediate_files.push_back(payload.substr(start, end - start));
-        start = end + 1;
-    }
-    intermediate_files.push_back(payload.substr(start));
-
-    // Instantiate the reducer
-    BaseReducer reducer = get_reducer_from_task_factory("cs6210");
-
-    // Aggregate key-value pairs from all intermediate files
-    std::unordered_map<std::string, std::vector<std::string>> key_value_map;
-    for (const auto& file : intermediate_files) {
-        process_intermediate_file(file, key_value_map);
-    }
-
-    // Call the user-defined reduce function for each key
-    for (const auto& [key, values] : key_value_map) {
-        reducer.reduce(key, values); // User-defined reduce function
-    }
-
-    // Set the response
-    response->set_task_id(request->task_id());
-    response->set_user_id(request->user_id());
-    std::cout << "Reduce task completed: " << request->task_id() << std::endl;
 }
 
 /* Process an intermediate file and aggregate key-value pairs */
@@ -208,4 +174,38 @@ void Worker::process_intermediate_file(const std::string& file_name, std::unorde
     }
 
     infile.close();
+}
+
+/* Handle reduce tasks */
+void Worker::handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response) {
+    std::string payload = request->payload();
+    std::vector<std::string> intermediate_files;
+    size_t start = 0, end;
+
+    // Parse the payload to extract intermediate file names
+    while ((end = payload.find(',', start)) != std::string::npos) {
+        intermediate_files.push_back(payload.substr(start, end - start));
+        start = end + 1;
+    }
+    intermediate_files.push_back(payload.substr(start));
+
+    // Instantiate the reducer
+    auto reducer = get_reducer_from_task_factory("cs6210");
+    auto reducer_impl = reducer->impl_;
+
+    // Aggregate key-value pairs from all intermediate files
+    std::unordered_map<std::string, std::vector<std::string>> key_value_map;
+    for (const auto& file : intermediate_files) {
+        process_intermediate_file(file, key_value_map);
+    }
+
+    // Call the user-defined reduce function for each key
+    for (const auto& [key, values] : key_value_map) {
+        reducer->reduce(key, values); // User-defined reduce function
+    }
+
+    // Set the response
+    response->set_task_id(request->task_id());
+    response->set_user_id(request->user_id());
+    std::cout << "Reduce task completed: " << request->task_id() << std::endl;
 }

@@ -237,14 +237,20 @@ class TaskResult final
   std::string* _internal_mutable_task_id();
 
   public:
-  // int32 user_id = 2;
+  // string user_id = 2;
   void clear_user_id() ;
-  ::int32_t user_id() const;
-  void set_user_id(::int32_t value);
+  const std::string& user_id() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  std::string* mutable_user_id();
+  PROTOBUF_NODISCARD std::string* release_user_id();
+  void set_allocated_user_id(std::string* value);
 
   private:
-  ::int32_t _internal_user_id() const;
-  void _internal_set_user_id(::int32_t value);
+  const std::string& _internal_user_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(
+      const std::string& value);
+  std::string* _internal_mutable_user_id();
 
   public:
   // @@protoc_insertion_point(class_scope:masterworker.TaskResult)
@@ -253,7 +259,7 @@ class TaskResult final
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       1, 2, 0,
-      39, 2>
+      46, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -271,7 +277,7 @@ class TaskResult final
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const TaskResult& from_msg);
     ::google::protobuf::internal::ArenaStringPtr task_id_;
-    ::int32_t user_id_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -464,14 +470,20 @@ class TaskRequest final
   std::string* _internal_mutable_payload();
 
   public:
-  // int32 user_id = 3;
+  // string user_id = 3;
   void clear_user_id() ;
-  ::int32_t user_id() const;
-  void set_user_id(::int32_t value);
+  const std::string& user_id() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  std::string* mutable_user_id();
+  PROTOBUF_NODISCARD std::string* release_user_id();
+  void set_allocated_user_id(std::string* value);
 
   private:
-  ::int32_t _internal_user_id() const;
-  void _internal_set_user_id(::int32_t value);
+  const std::string& _internal_user_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(
+      const std::string& value);
+  std::string* _internal_mutable_user_id();
 
   public:
   // int32 num_reducers = 4;
@@ -490,7 +502,7 @@ class TaskRequest final
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       2, 4, 0,
-      47, 2>
+      54, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -509,7 +521,7 @@ class TaskRequest final
                           const TaskRequest& from_msg);
     ::google::protobuf::internal::ArenaStringPtr task_id_;
     ::google::protobuf::internal::ArenaStringPtr payload_;
-    ::int32_t user_id_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
     ::int32_t num_reducers_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -630,26 +642,52 @@ inline void TaskRequest::set_allocated_payload(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:masterworker.TaskRequest.payload)
 }
 
-// int32 user_id = 3;
+// string user_id = 3;
 inline void TaskRequest::clear_user_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.user_id_ = 0;
+  _impl_.user_id_.ClearToEmpty();
 }
-inline ::int32_t TaskRequest::user_id() const {
+inline const std::string& TaskRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:masterworker.TaskRequest.user_id)
   return _internal_user_id();
 }
-inline void TaskRequest::set_user_id(::int32_t value) {
-  _internal_set_user_id(value);
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void TaskRequest::set_user_id(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:masterworker.TaskRequest.user_id)
 }
-inline ::int32_t TaskRequest::_internal_user_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.user_id_;
+inline std::string* TaskRequest::mutable_user_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:masterworker.TaskRequest.user_id)
+  return _s;
 }
-inline void TaskRequest::_internal_set_user_id(::int32_t value) {
+inline const std::string& TaskRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void TaskRequest::_internal_set_user_id(const std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.user_id_ = value;
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline std::string* TaskRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline std::string* TaskRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:masterworker.TaskRequest.user_id)
+  return _impl_.user_id_.Release();
+}
+inline void TaskRequest::set_allocated_user_id(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:masterworker.TaskRequest.user_id)
 }
 
 // int32 num_reducers = 4;
@@ -726,26 +764,52 @@ inline void TaskResult::set_allocated_task_id(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:masterworker.TaskResult.task_id)
 }
 
-// int32 user_id = 2;
+// string user_id = 2;
 inline void TaskResult::clear_user_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.user_id_ = 0;
+  _impl_.user_id_.ClearToEmpty();
 }
-inline ::int32_t TaskResult::user_id() const {
+inline const std::string& TaskResult::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:masterworker.TaskResult.user_id)
   return _internal_user_id();
 }
-inline void TaskResult::set_user_id(::int32_t value) {
-  _internal_set_user_id(value);
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void TaskResult::set_user_id(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:masterworker.TaskResult.user_id)
 }
-inline ::int32_t TaskResult::_internal_user_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.user_id_;
+inline std::string* TaskResult::mutable_user_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:masterworker.TaskResult.user_id)
+  return _s;
 }
-inline void TaskResult::_internal_set_user_id(::int32_t value) {
+inline const std::string& TaskResult::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void TaskResult::_internal_set_user_id(const std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.user_id_ = value;
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline std::string* TaskResult::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline std::string* TaskResult::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:masterworker.TaskResult.user_id)
+  return _impl_.user_id_.Release();
+}
+inline void TaskResult::set_allocated_user_id(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:masterworker.TaskResult.user_id)
 }
 
 #ifdef __GNUC__

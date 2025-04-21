@@ -17,14 +17,12 @@ struct BaseMapperInternal {
 
     /* DON'T change this function's signature */
     void emit(const std::string& key, const std::string& val);
-
-    /* Flush the emit buffer to disk */
-    void flush_emit_buffer();
+    
 
     /* NOW you can add below, data members and member functions as per the need of your implementation */
     void set_num_reducers(int num_reducers) { num_reducers_ = num_reducers; } // Set the number of reducers
     void set_task_id(int task_id) { task_id_ = task_id; }                     // Set the task ID
-
+    void flush_emit_buffer(); //Flush the emit buffer to disk
     int partition_function(const std::string& key); // Partitioning logic
 
 private:
