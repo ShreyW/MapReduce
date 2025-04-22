@@ -108,13 +108,29 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
 
         file.seekg(start_offset, std::ios::beg);
         std::string line;
+        // Read lines until the end offset is reached
+        std::cout << "Current offset: " << end_offset << std::endl; // Debugging line
+        std::cout << "Filetellg offset: " << file.tellg() << std::endl; // Debugging line
+
         while (std::getline(file, line)) {
+            std::cout << "Processing line: " << line << std::endl; // Debugging line
+            mapper->map(line);
             if (file.tellg() > end_offset) {
                 break; // Stop reading if we exceed the end offset
             }
-            std::cout << "Processing line: " << line << std::endl; // Debugging line
-            mapper->map(line);
         }
+
+        // Handle the case where the last line does not end with a newline
+        if (file.eof() && file.tellg() <= end_offset) {
+            file.clear(); // Clear EOF flag
+            std::string remaining;
+            std::getline(file, remaining, '\0'); // Read the remaining content
+            if (!remaining.empty()) {
+                std::cout << "Processing remaining content: " << remaining << std::endl; // Debugging line
+                mapper->map(remaining);
+            }
+        }
+
         file.close();
     }
 }

@@ -40,7 +40,7 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
             file.seekg(shard_end_offset, std::ios::beg);
             char c;
             while (file.get(c)) {
-                if (c == '\n') {
+                if (c == '\n' || c == EOF) {
                     shard_end_offset = file.tellg();
                     break;
                 }
