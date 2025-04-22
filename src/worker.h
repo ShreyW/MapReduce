@@ -165,12 +165,15 @@ void Worker::process_intermediate_file(const std::string& file_name, std::map<st
         return; // Ignore missing files
     }
 
+    std::cout << "Processing intermediate file: " << file_name << std::endl; // Debugging line
+
     std::string line;
     while (std::getline(infile, line)) {
-        size_t tab_pos = line.find('\t');
-        if (tab_pos != std::string::npos) {
-            std::string key = line.substr(0, tab_pos);
-            std::string value = line.substr(tab_pos + 1);
+        //std::cout << "Line: " << line << std::endl; // Debugging line
+        size_t comma_pos = line.find(',');
+        if (comma_pos != std::string::npos) {
+            std::string key = line.substr(0, comma_pos);
+            std::string value = line.substr(comma_pos + 1);
             key_value_map[key].push_back(value); // Aggregate values for the same key
         }
     }
@@ -183,6 +186,7 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     std::string payload = request->payload();
     std::string user_id = request->user_id();
     std::string output_dir = request->output_dir();
+    std::string task_id = request->task_id();
     std::vector<std::string> intermediate_files;
     size_t start = 0, end;
 
@@ -205,14 +209,27 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
         process_intermediate_file(file, key_value_map);
     }
 
+    // // Print the key-value map for debugging purposes
+    // std::cout << "Key-Value Map:" << std::endl;
+    // for (const auto& [key, values] : key_value_map) {
+    //     std::cout << "Key: " << key << ", Values: [";
+    //     for (size_t i = 0; i < values.size(); ++i) {
+    //         std::cout << values[i];
+    //         if (i < values.size() - 1) {
+    //             std::cout << ", ";
+    //         }
+    //     }
+    //     std::cout << "]" << std::endl;
+    // }
+
     // Call the user-defined reduce function for each key
     for (const auto& [key, values] : key_value_map) {
         reducer->reduce(key, values); // User-defined reduce function
     }
 
     // Set the response
-    response->set_task_id(request->task_id());
-    response->set_user_id(request->user_id());
+    response->set_task_id(task_id);
+    response->set_user_id(user_id);
     std::cout << "Reduce task completed: " << request->task_id() << std::endl;
 
     reducer_impl->flush_emit_buffer(); // Flush the emit buffer to write output files to disk

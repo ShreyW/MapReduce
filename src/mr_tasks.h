@@ -43,6 +43,13 @@ inline void BaseMapperInternal::emit(const std::string& key, const std::string& 
 
 /* Flush the emit buffer to disk */
 inline void BaseMapperInternal::flush_emit_buffer() {
+    // for (const auto& [partition, buffer] : emit_buffer_) {
+    //     std::cout << "Partition " << partition << " emit buffer contents:" << std::endl;
+    //     for (const auto& [key, val] : buffer) {
+    //         std::cout << key << "," << val << std::endl;
+    //     }
+    // }
+
     for (const auto& [partition, buffer] : emit_buffer_) {
         // Generate the file name for this partition
         std::string file_name = "intermediate/" + user_id_ + "," + std::to_string(partition) + ".txt";
@@ -104,17 +111,22 @@ struct BaseReducerInternal {
 /* Emit function */
 inline void BaseReducerInternal::emit(const std::string& key, const std::string& val) {
     // Add the key-value pair to the appropriate buffer
+    // printf("Emitting key-value pair: %s, %s\n", key.c_str(), val.c_str());
     emit_buffer_.emplace_back(key, val);
-
 }
 
 /* Flush the emit buffer to disk */
 inline void BaseReducerInternal::flush_emit_buffer() {
-    // Generate the file name for this partition
+    // Print the emit buffer to the console
+    // printf("Emit buffer contents:\n");
+    // for (const auto& [key, val] : emit_buffer_) {
+    //     std::cout << key << "," << val << std::endl;
+    // }
+    //Generate the file name for this partition
     std::string file_name = output_dir_ + "/" + user_id_ + ".txt";
 
     // Open the file in append mode
-    std::ofstream file(file_name, std::ios::app);
+    std::ofstream file(file_name, std::ios::app | std::ios::out);
     if (!file.is_open()) {
         std::cerr << "Error: Unable to open intermediate file " << file_name << std::endl;
         return;
