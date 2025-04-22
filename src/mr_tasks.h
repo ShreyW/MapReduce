@@ -135,7 +135,7 @@ inline void BaseReducerInternal::flush_emit_buffer() {
 
     // Write all key-value pairs in the buffer to the file
     for (const auto& [key, val] : emit_buffer_) {
-        file << key << "," << val << "\n";
+        file << key << " " << val << "\n";
     }
 
     file.close();

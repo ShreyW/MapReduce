@@ -65,11 +65,9 @@ bool Worker::run() {
     builder.AddListeningPort(ip_addr_port_, grpc::InsecureServerCredentials());
     builder.RegisterService(this);
 
-    // Heartbeat missing
-
     std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
     std::cout << "Worker listening on " << ip_addr_port_ << std::endl;
-
+    
     server->Wait();
     return true;
 }
@@ -223,19 +221,6 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     for (const auto& file : intermediate_files) {
         process_intermediate_file(file, key_value_map);
     }
-
-    // // Print the key-value map for debugging purposes
-    // std::cout << "Key-Value Map:" << std::endl;
-    // for (const auto& [key, values] : key_value_map) {
-    //     std::cout << "Key: " << key << ", Values: [";
-    //     for (size_t i = 0; i < values.size(); ++i) {
-    //         std::cout << values[i];
-    //         if (i < values.size() - 1) {
-    //             std::cout << ", ";
-    //         }
-    //     }
-    //     std::cout << "]" << std::endl;
-    // }
 
     // Call the user-defined reduce function for each key
     for (const auto& [key, values] : key_value_map) {

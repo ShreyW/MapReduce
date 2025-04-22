@@ -20,6 +20,9 @@
 
 //std::string const INTERMEDIATE_FILE_DIR = "";
 
+int HEARTBEAT_RATE = 10; // seconds
+int STRAGGLER_MARGIN = 5; // seconds
+
 enum WorkerState {
     AVAILABLE,
     BUSY,
@@ -77,7 +80,6 @@ class Master {
         std::thread ping_thread_;       // Thread for pinging workers
         std::thread monitor_thread_;   // Thread for monitoring heartbeats
 };
-
 
 /* CS6210_TASK: This is all the information your master will get from the framework.
     You can populate your other class data members here if you want */
@@ -147,7 +149,7 @@ bool Master::run() {
     std::cout << "Threads done!" << std::endl;
 
     // Remove intermediate files
-    remove_intermediate_files();
+    //remove_intermediate_files();
 
     std::cout << "MapReduce process completed successfully!" << std::endl;
     return true;
@@ -241,16 +243,28 @@ void Master::monitor_workers() {
                 break; // Exit the thread if the done_ flag is set
             }
         }
+
         {
             std::unique_lock<std::mutex> lock(mutex_);
             for (auto& worker : workers_) {
                 if (worker.state == FAILED) {
                     continue; // Skip already failed workers
                 }
-                if(worker.last_heartbeat + std::chrono::seconds(10) < std::chrono::steady_clock::now()) {
+
+                /// CHECK FOR FAILED WORKERS
+                if(worker.last_heartbeat + std::chrono::seconds(3) < std::chrono::steady_clock::now()) {
                     // Worker failed
                     std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
                     worker.state = FAILED;
+
+                    // Remove all tasks assigned to this worker
+                    for (auto it = task_to_worker_.begin(); it != task_to_worker_.end();) {
+                        if (it->second == worker.address) {
+                            it = task_to_worker_.erase(it); // Remove the mapping
+                        } else {
+                            ++it;
+                        }
+                    }
 
                     // Reassign tasks assigned to this worker
                     for (const auto& task : task_to_worker_) {
@@ -263,8 +277,23 @@ void Master::monitor_workers() {
                         }
                     }
                 }
+
+                // CHECK FOR STRAGGLERS
+                if (worker.state == BUSY && std::chrono::steady_clock::now() - worker.last_heartbeat > std::chrono::seconds(STRAGGLER_MARGIN)) {
+                    std::cerr << "Worker " << worker.address << " is a straggler!" << std::endl;
+                    // Reassign tasks assigned to this worker without marking it as failed
+                    for (const auto& task : task_to_worker_) {
+                        if (task.second == worker.address) {
+                            if (task.first.find("map") != std::string::npos) { // Failed mapper
+                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
+                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
+                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                            }
+                        }
+                    }
+                }
             }
-        }   
+        }
         cv_.notify_all();
     }
 }
@@ -279,31 +308,30 @@ void Master::ping_workers() {
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(5)); // Ping every 5 seconds
-        {
-            std::unique_lock<std::mutex> lock(mutex_);
-            for (auto& worker : workers_) {
-                if (worker.state == FAILED) {
-                    continue; // Skip already failed workers
-                }
 
-                // Create a gRPC stub to communicate with the worker
-                auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
-                auto stub = masterworker::MasterWorkerService::NewStub(channel);
+        std::unique_lock<std::mutex> lock(mutex_);
+        for (auto& worker : workers_) {
+            if (worker.state == FAILED) {
+                continue; // Skip already failed workers
+            }
 
-                // Prepare the PingRequest
-                masterworker::PingRequest request;
-                masterworker::PingResponse response;
-                grpc::ClientContext context;
+            // Create a gRPC stub to communicate with the worker
+            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+            auto stub = masterworker::MasterWorkerService::NewStub(channel);
 
-                // Send the PingWorker RPC
-                grpc::Status status = stub->PingWorker(&context, request, &response);
+            // Prepare the PingRequest
+            masterworker::PingRequest request;
+            masterworker::PingResponse response;
+            grpc::ClientContext context;
 
-                if (status.ok()) {
-                    // Update the worker's last heartbeat timestamp
-                    worker.last_heartbeat = std::chrono::steady_clock::now();
-                } else {
-                    std::cerr << "Ping failed for worker " << worker.address << std::endl;
-                }
+            // Send the PingWorker RPC
+            grpc::Status status = stub->PingWorker(&context, request, &response);
+
+            if (status.ok()) {
+                // Update the worker's last heartbeat timestamp
+                worker.last_heartbeat = std::chrono::steady_clock::now();
+            } else {
+                std::cerr << "Ping failed for worker " << worker.address << std::endl;
             }
         }
     }
@@ -318,7 +346,7 @@ void Master::monitor_heartbeats() {
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(5)); // Check every 5 seconds
+        std::this_thread::sleep_for(std::chrono::seconds(HEARTBEAT_RATE)); // Check every HEARTBEAT_RATE seconds
         {
             std::unique_lock<std::mutex> lock(mutex_);
             auto now = std::chrono::steady_clock::now();
@@ -326,13 +354,22 @@ void Master::monitor_heartbeats() {
                 if (worker.state == FAILED) {
                     continue; // Skip already failed workers
                 }
-
+    
                 // Check if more than 10 seconds have passed since the last heartbeat
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > 10) {
+                if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > HEARTBEAT_RATE) {
                     // Worker failed
                     std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
                     worker.state = FAILED;
-
+    
+                    // Remove all tasks assigned to this worker
+                    for (auto it = task_to_worker_.begin(); it != task_to_worker_.end();) {
+                        if (it->second == worker.address) {
+                            it = task_to_worker_.erase(it); // Remove the mapping
+                        } else {
+                            ++it;
+                        }
+                    }
+    
                     // Reassign tasks assigned to this worker
                     for (const auto& task : task_to_worker_) {
                         if (task.second == worker.address) {
@@ -354,27 +391,45 @@ void Master::monitor_heartbeats() {
 void Master::handle_task_completion(const masterworker::TaskResult& result) {
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        if (result.task_id().find("map") != std::string::npos) {
-            ++completed_map_tasks_;
-        } else if (result.task_id().find("reduce") != std::string::npos) {
-            ++completed_reduce_tasks_;
+
+        const std::string& task_id = result.task_id();
+        const std::string& worker_address = result.user_id();
+
+        // Check if the task-to-worker mapping exists for this task
+        auto it = task_to_worker_.find(task_id);
+        if (it == task_to_worker_.end() || it->second != worker_address) {
+            // Unexpected or duplicate task completion
+            std::cerr << "Unexpected or duplicate task completion for task: " << task_id
+                    << " from worker: " << worker_address << std::endl;
+            return;
         }
+
+        // Remove the task-to-worker mapping for this task
+        task_to_worker_.erase(task_id);
 
         // Mark worker as available
         for (auto& worker : workers_) {
-            if (task_to_worker_[result.task_id()] == worker.address) {
+            if (worker.address == worker_address) {
                 worker.state = AVAILABLE;
                 break;
             }
         }
 
-        std::cout << "\n\nHandling completion: " << result.task_id() << std::endl;
-        std::cout << "Task completed: " << result.task_id() << std::endl;
-        std::cout << "Worker: " << result.user_id() << std::endl;
+        // Increment the appropriate completed task counter
+        if (task_id.find("map") != std::string::npos) {
+            ++completed_map_tasks_;
+        } else if (task_id.find("reduce") != std::string::npos) {
+            ++completed_reduce_tasks_;
+        }
+
+        std::cout << "\n\nHandling completion: " << task_id << std::endl;
+        std::cout << "Task completed: " << task_id << std::endl;
+        std::cout << "Worker: " << worker_address << std::endl;
         std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
         std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
         std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
         std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
+
         // Print worker states
         std::cout << "Worker States:" << std::endl;
         for (const auto& worker : workers_) {
@@ -398,9 +453,8 @@ void Master::handle_task_completion(const masterworker::TaskResult& result) {
         for (const auto& task_mapping : task_to_worker_) {
             std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
         }
-
-        cv_.notify_all();
     }
+    cv_.notify_all();
 }
 
 void Master::process_responses() {
