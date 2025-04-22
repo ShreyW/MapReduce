@@ -67,6 +67,9 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
         }
 
         file.close();
+        std::cout<<"File: " << file_name << ", Size: " << file_size << " bytes" << std::endl;
+        std::cout<<"Current Shard Size: " << current_shard_size << " bytes" << std::endl;
+        std::cout<<"Current Shard Segments: " << current_shard.file_segments.size() << std::endl;
     }
 
     // Add the last shard if it contains any data

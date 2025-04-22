@@ -15,7 +15,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/alarm.h>
 
-std::string const FILE_DIR = "/intermediate";
+std::string const FILE_DIR = "intermediate/";
 
 enum WorkerState {
     AVAILABLE,
@@ -126,6 +126,7 @@ bool Master::run() {
 }
 
 void Master::assign_map_tasks() {
+    int map_task_counter = 0;
     for (auto& worker : workers_) {
         if (worker.state == AVAILABLE && !map_task_queue_.empty()) {
             // Get the next shard from the queue
@@ -137,12 +138,12 @@ void Master::assign_map_tasks() {
             auto stub = masterworker::MasterWorkerService::NewStub(channel);
 
             masterworker::TaskRequest task;
-            task.set_task_id("map_" + std::to_string(completed_map_tasks_)); // Unique task ID
+            task.set_task_id("map_" + std::to_string(map_task_counter++)); // Unique task ID
 
             // Serialize the FileShard into the payload
             std::string payload;
             for (const auto& segment : shard_group.file_segments) {
-                const std::string& file_name = FILE_DIR + std::get<0>(segment);
+                const std::string& file_name = std::get<0>(segment);
                 size_t start_offset = std::get<1>(segment);
                 size_t end_offset = std::get<2>(segment);
                 payload += file_name + ":" + std::to_string(start_offset) + "-" + std::to_string(end_offset) + ";";
@@ -180,12 +181,12 @@ void Master::assign_reduce_tasks() {
 
             // Collect intermediate files for this reduce task
             std::string intermediate_files;
-            for (int mapper_id = 0; mapper_id < num_mappers; ++mapper_id) {
-                intermediate_files += FILE_DIR + std::to_string(mapper_id) + "," + std::to_string(reduce_task_id) + ".txt;";
+            for (const auto& mapper_id : spec_.worker_ipaddr_ports) {
+                intermediate_files += FILE_DIR + mapper_id + "," + std::to_string(reduce_task_id) + ".txt;";
             }
             task.set_payload(intermediate_files);
             task.set_user_id(worker.address); // Include user ID
-            task.set_output_dir(spec_.output); // Include output directory
+            task.set_output_dir(spec_.output_dir); // Include output directory
 
             // Asynchronous gRPC call
             auto* call = new AsyncCall;
@@ -256,11 +257,14 @@ void Master::process_responses() {
     while (cq_.Next(&tag, &ok)) {
         if (ok) {
             auto* call = static_cast<AsyncCall*>(tag);
+            std::cout << "Task ID: " << call->response.task_id() << std::endl;
+            std::cout << "User ID: " << call->response.user_id() << std::endl;
 
             if (call->status.ok()) {
+                std::cout << "Task success for task_id: " << call->response.task_id() << std::endl;
                 handle_task_completion(call->response); // Call handle_task_completion
             } else {
-                std::cerr << "Error: Task failed for task_id " << call->response.task_id() << std::endl;
+                std::cerr << "Error: Task failed for task_id: " << call->response.task_id() << std::endl;
             }
 
             delete call; // Clean up the call object

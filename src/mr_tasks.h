@@ -21,13 +21,13 @@ struct BaseMapperInternal {
 
     /* NOW you can add below, data members and member functions as per the need of your implementation */
     void set_num_reducers(int num_reducers) { num_reducers_ = num_reducers; } // Set the number of reducers
-    void set_user_id(int user_id) { user_id_ = user_id; }                     // Set the user ID
+    void set_user_id(std::string user_id) { user_id_ = user_id; }                     // Set the user ID
     void flush_emit_buffer(); // Flush the emit buffer to disk (intermediate files)
     int partition_function(const std::string& key); // Partitioning logic
 
 private:
     int num_reducers_; // Number of reducers
-    int user_id_;
+    std::string user_id_;
 
     // Emit buffer: one buffer per partition
     std::unordered_map<int, std::vector<std::pair<std::string, std::string>>> emit_buffer_;
@@ -45,12 +45,13 @@ inline void BaseMapperInternal::emit(const std::string& key, const std::string& 
 inline void BaseMapperInternal::flush_emit_buffer() {
     for (const auto& [partition, buffer] : emit_buffer_) {
         // Generate the file name for this partition
-        std::string file_name = "intermediate/" + std::to_string(user_id_) + "," + std::to_string(partition) + ".txt";
+        std::string file_name = "intermediate/" + user_id_ + "," + std::to_string(partition) + ".txt";
 
         // Open the file in append mode
-        std::ofstream file(file_name, std::ios::app);
+        std::ofstream file(file_name, std::ios::out | std::ios::app);
+         // Check if the file opened successfully
         if (!file.is_open()) {
-            std::cerr << "Error: Unable to open intermediate file " << file_name << std::endl;
+            std::cerr << "Error: Unable to open or create intermediate file " << file_name << std::endl;
             continue;
         }
 
@@ -91,11 +92,11 @@ struct BaseReducerInternal {
 
     /* NOW you can add below, data members and member functions as per the need of your implementation */
     void flush_emit_buffer(); // Flush the emit buffer to disk (output files)
-    void set_user_id(int user_id) { user_id_ = user_id; }
+    void set_user_id(std::string user_id) { user_id_ = user_id; }
     void set_output_dir(std::string output_dir) { output_dir_ = output_dir; }                  
 
     private:
-        int user_id_;
+        std::string user_id_;
         std::string output_dir_;
         std::vector<std::pair<std::string, std::string>> emit_buffer_; // Emit buffer: one buffer for all key-value pairs
 };
@@ -104,12 +105,13 @@ struct BaseReducerInternal {
 inline void BaseReducerInternal::emit(const std::string& key, const std::string& val) {
     // Add the key-value pair to the appropriate buffer
     emit_buffer_.emplace_back(key, val);
+
 }
 
 /* Flush the emit buffer to disk */
 inline void BaseReducerInternal::flush_emit_buffer() {
     // Generate the file name for this partition
-    std::string file_name = output_dir_ + "/" + std::to_string(user_id_) + ".txt";
+    std::string file_name = output_dir_ + "/" + user_id_ + ".txt";
 
     // Open the file in append mode
     std::ofstream file(file_name, std::ios::app);

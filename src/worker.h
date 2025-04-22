@@ -27,7 +27,7 @@ class Worker : public masterworker::MasterWorkerService::Service {
         std::string ip_addr_port_; // Worker address (ip:port)
 
         // gRPC service implementation
-        grpc::Status ExecuteTask(grpc::ServxerContext* context,
+        grpc::Status ExecuteTask(grpc::ServerContext* context,
                                  const masterworker::TaskRequest* request,
                                  masterworker::TaskResult* response) override;
 
@@ -37,7 +37,7 @@ class Worker : public masterworker::MasterWorkerService::Service {
             
         // Reading of files and calling user-defined functions
         void process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> mapper);
-        void process_intermediate_file(const std::string& file_name, std::unordered_map<std::string, std::vector<std::string>>& key_value_map);
+        void process_intermediate_file(const std::string& file_name, std::map<std::string, std::vector<std::string>>& key_value_map);
 };
 
 
@@ -120,6 +120,7 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
 void Worker::handle_map_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response) {
     std::string payload = request->payload();
     int num_reducers = request->num_reducers();
+    std::string user_id = request->user_id();
 
     // Parse the payload to extract multiple groups of file shards
     // payload structure: filename1:start_offset1-end_offset1;filename2:start_offset2-end_offset2;...
@@ -199,7 +200,7 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     reducer_impl->set_output_dir(output_dir);
 
     // Aggregate key-value pairs from all intermediate files
-    std::unordered_map<std::string, std::vector<std::string>> key_value_map;
+    std::map<std::string, std::vector<std::string>> key_value_map;
     for (const auto& file : intermediate_files) {
         process_intermediate_file(file, key_value_map);
     }
@@ -213,4 +214,7 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     response->set_task_id(request->task_id());
     response->set_user_id(request->user_id());
     std::cout << "Reduce task completed: " << request->task_id() << std::endl;
+
+    reducer_impl->flush_emit_buffer(); // Flush the emit buffer to write output files to disk
+    std::cout << "Output files written to: " << output_dir << std::endl;
 }
