@@ -113,17 +113,11 @@ struct BaseReducerInternal {
 /* Emit function */
 inline void BaseReducerInternal::emit(const std::string& key, const std::string& val) {
     // Add the key-value pair to the appropriate buffer
-    // printf("Emitting key-value pair: %s, %s\n", key.c_str(), val.c_str());
     emit_buffer_.emplace_back(key, val);
 }
 
 /* Flush the emit buffer to disk */
 inline void BaseReducerInternal::flush_emit_buffer() {
-    // Print the emit buffer to the console
-    // printf("Emit buffer contents:\n");
-    // for (const auto& [key, val] : emit_buffer_) {
-    //     std::cout << key << "," << val << std::endl;
-    // }
     //Generate the file name for this partition
     std::string file_name = output_dir_ + "/" + reduce_task_id_ + ".txt";
     

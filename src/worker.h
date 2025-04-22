@@ -220,13 +220,6 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
         reducer->reduce(key, values); // User-defined reduce function
     }
 
-    std::cout<< "Key value pairs emitted by reducer: " << std::endl;
-    for (const auto& [key, values] : key_value_map) {
-        for (const auto& value : values) {
-            std::cout << key << "," << value << std::endl; // Print the emitted key-value pairs
-        }
-    }
-
     // Set the response
     response->set_task_id(reduce_task_id);
     response->set_user_id(request->user_id());
