@@ -45,9 +45,9 @@ inline void BaseMapperInternal::emit(const std::string& key, const std::string& 
 inline void BaseMapperInternal::flush_emit_buffer() {
     //Print the emit buffer to the console
     // for (const auto& [partition, buffer] : emit_buffer_) {
-        // std::cout << "Partition " << partition << " emit buffer contents:" << std::endl;
+        // std::cerr << "Partition " << partition << " emit buffer contents:" << std::endl;
         // for (const auto& [key, val] : buffer) {
-        //     std::cout << key << "," << val << std::endl;
+        //     std::cerr << key << "," << val << std::endl;
         // }
     // }
 
@@ -119,6 +119,9 @@ inline void BaseReducerInternal::emit(const std::string& key, const std::string&
 /* Flush the emit buffer to disk */
 inline void BaseReducerInternal::flush_emit_buffer() {
     //Generate the file name for this partition
+
+    
+
     std::string file_name = output_dir_ + "/" + reduce_task_id_ + ".txt";
     
     // Open the file in append mode

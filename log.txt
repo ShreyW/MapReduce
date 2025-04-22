@@ -1,26 +1,16 @@
 Worker received task: map_0
-Worker received task: map_1
 Worker received task: reduce_0
-Worker received task: reduce_1
-Worker received task: reduce_2
 Worker received task: reduce_3
-Worker received task: reduce_4
-Worker received task: reduce_5
-Worker received task: reduce_6
-Worker received task: reduce_7
-Worker received task: reduce_8
-Worker received task: reduce_9
-Worker received task: reduce_10
-Worker received task: reduce_11
-Worker received task: reduce_12
-Worker received task: reduce_13
-Worker received task: reduce_14
-Worker received task: reduce_15
+Worker received task: reduce_2
+Worker received task: reduce_1
 MapReduce process completed successfully!
 Parsing config.ini file...
-Found 1 worker addresses in config.ini
+Found 4 worker addresses in config.ini
 Starting worker processes...
-Started worker at localhost:50051 with PID 12105
+Started worker at localhost:50051 with PID 16790
+Started worker at localhost:50052 with PID 16791
+Started worker at localhost:50053 with PID 16792
+Started worker at localhost:50054 with PID 16793
 Waiting for workers to initialize...
 Running MapReduce demo...
 MapReduce execution completed
@@ -32,4 +22,7 @@ All output validated successfully!
 
 ✅ MapReduce test completed successfully!
 Cleaning up worker processes...
-Terminated worker with PID 12105
+Terminated worker with PID 16790
+Terminated worker with PID 16791
+Terminated worker with PID 16792
+Terminated worker with PID 16793

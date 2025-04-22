@@ -56,8 +56,8 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
             // If the shard exceeds the max size, finalize it
             if (current_shard_size > max_shard_size) {
                 current_shard.file_segments.emplace_back(file_name, shard_start_offset, line_end_offset);
-                // std::cout<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
-                // std::cout<< "Start offset " << shard_start_offset << " End offset " << line_end_offset << std::endl;
+                // std::cerr<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
+                // std::cerr<< "Start offset " << shard_start_offset << " End offset " << line_end_offset << std::endl;
                 file_shards.push_back(current_shard);
                 current_shard = FileShard(); // Start a new shard
                 current_shard_size = 0;
@@ -70,8 +70,8 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
         // Handle the case where the last shard of this file is incomplete
         if (current_shard_size > 0) {
             current_shard.file_segments.emplace_back(file_name, shard_start_offset, current_offset);
-            // std::cout<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
-            // std::cout<< "Start offset " << shard_start_offset << " End offset " << current_offset << std::endl;
+            // std::cerr<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
+            // std::cerr<< "Start offset " << shard_start_offset << " End offset " << current_offset << std::endl;
         }
 
         file.close();
