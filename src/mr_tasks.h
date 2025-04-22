@@ -53,7 +53,7 @@ inline void BaseMapperInternal::flush_emit_buffer() {
 
     for (const auto& [partition, buffer] : emit_buffer_) {
         // Generate the file name for this partition
-        std::string file_name = "intermediate_" + user_id_ + "," + std::to_string(partition) + ".txt";
+        std::string file_name = "intermediate_" + user_id_ + "_" + std::to_string(partition) + ".txt";
 
         // Open the file in append mode
         std::ofstream file(file_name, std::ios::out | std::ios::app);
@@ -68,6 +68,7 @@ inline void BaseMapperInternal::flush_emit_buffer() {
             file << key << "," << val << "\n";
         }
 
+        file.flush();
         file.close();
     }
 
@@ -137,7 +138,8 @@ inline void BaseReducerInternal::flush_emit_buffer() {
     for (const auto& [key, val] : emit_buffer_) {
         file << key << " " << val << "\n";
     }
-
+    
+    file.flush();
     file.close();
 
     // Clear the buffers after flushing

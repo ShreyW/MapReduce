@@ -213,7 +213,7 @@ void Master::assign_reduce_tasks() {
                 // Collect intermediate files for this reduce task
                 std::string intermediate_files;
                 for (const auto& mapper_id : spec_.worker_ipaddr_ports) {
-                    intermediate_files += "intermediate_" + mapper_id + "," + std::to_string(reduce_task_id) + ".txt;";
+                    intermediate_files += "intermediate_" + mapper_id + "_" + std::to_string(reduce_task_id) + ".txt;";
                 }
                 task.set_payload(intermediate_files);
                 task.set_user_id(worker.address); // Include user ID

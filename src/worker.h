@@ -98,6 +98,12 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
         size_t start_offset = std::get<1>(file_segment);
         size_t end_offset = std::get<2>(file_segment);
 
+        std::cout << "Processing file segment: " 
+                  << "Filename: " << filename 
+                  << ", Start Offset: " << start_offset 
+                  << ", End Offset: " << end_offset 
+                  << std::endl;
+
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
             std::cerr << "Error in process file shard: Unable to open file " << filename << std::endl;
@@ -108,21 +114,9 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
         std::string line;
         // Read lines until the end offset is reached
 
-        while (std::getline(file, line)) {
+        while (file.tellg() < end_offset && std::getline(file, line)) {
+            std::cout << "Current line read by worker " << ip_addr_port_ << ": " << line << std::endl;
             mapper->map(line);
-            if (file.tellg() > end_offset) {
-                break; // Stop reading if we exceed the end offset
-            }
-        }
-
-        // Handle the case where the last line does not end with a newline
-        if (file.eof() && file.tellg() <= end_offset) {
-            file.clear(); // Clear EOF flag
-            std::string remaining;
-            std::getline(file, remaining, '\0'); // Read the remaining content
-            if (!remaining.empty()) {
-                mapper->map(remaining);
-            }
         }
 
         file.close();

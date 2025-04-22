@@ -100,7 +100,11 @@ class MapReduceTestRunner:
     def run_mapreduce(self):
         """Run the MapReduce demo"""
         print("Running MapReduce demo...")
+        
         os.chdir(self.bin_dir)
+        output_dir = self.bin_dir / "output"
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
         
         # Start the MapReduce demo
         cmd = ['./mrdemo', 'config.ini']

@@ -12,8 +12,6 @@ struct FileShard {
     std::vector<std::tuple<std::string, size_t, size_t>> file_segments; // Vector of (filename, start_offset, end_offset)
 };
 
-
-// TODO: redo this function
 /* CS6210_TASK: Create fileshards from the list of input files, map_kilobytes etc. using mr_spec you populated  */
 inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& file_shards) {
     size_t max_shard_size = mr_spec.map_kilobytes * 1024; // Convert kilobytes to bytes
@@ -28,62 +26,58 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
             return false;
         }
 
+        size_t current_offset = 0;
         size_t file_size = 0;
+
         file.seekg(0, std::ios::end);
         file_size = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        std::cout << "File size of " << file_name << ": " << file_size << " bytes" << std::endl;
-
-        size_t current_offset = 0;
+        char c;
+        size_t shard_start_offset = current_offset;
 
         while (current_offset < file_size) {
-            size_t shard_end_offset = std::min(current_offset + max_shard_size - current_shard_size, file_size);
-            std::cout << "Beggining of the loop. Current offset: " << current_offset << ", Shard end offset: " << shard_end_offset << std::endl;
-
-
-            // Align shard_end_offset to the nearest newline ('\n')
             file.seekg(current_offset, std::ios::beg);
-            char c;
+            size_t line_end_offset = current_offset;
+
+            // Read character by character until a newline or EOF
             while (file.get(c)) {
-                std::cout << "Current character: " << c << std::endl;
-                if (c == '\n' || c == EOF) {
-                    shard_end_offset = file.tellg();
-                    std::cout << "On new line or EOF. Current offset: " << current_offset << ", Shard end offset: " << shard_end_offset << std::endl;
-                    
-                    // If no newline is found, align to the end of the file
-                    if (shard_end_offset == current_offset) {
-                        shard_end_offset = file_size;
-                        std::cout << "No new line found. Aligning to end of file. Current offset: " << current_offset << ", Shard end offset: " << shard_end_offset << std::endl;
-                    }
+                ++line_end_offset;
+                if (c == '\n' || file.eof()) {
+                    break;
                 }
             }
 
-        
-            // If the current shard is full, finalize it and start a new shard
-            if (current_shard_size >= max_shard_size) {
-                 // Add the current file segment to the shard
-                current_shard.file_segments.emplace_back(file_name, current_offset, shard_end_offset);
+            // Add the current line to the shard
+            size_t line_size = line_end_offset - current_offset;
+            current_shard_size += line_size;
+
+
+            // If the shard exceeds the max size, finalize it
+            if (current_shard_size > max_shard_size) {
+                current_shard.file_segments.emplace_back(file_name, shard_start_offset, line_end_offset);
+                std::cout<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
+                std::cout<< "Start offset " << shard_start_offset << " End offset " << line_end_offset << std::endl;
                 file_shards.push_back(current_shard);
                 current_shard = FileShard(); // Start a new shard
                 current_shard_size = 0;
-                std::cout << "Current offset when new shard: " << current_offset << std::endl;
+                shard_start_offset = line_end_offset; // point to the next char after the newline
             }
 
-            // Update offsets and shard size
-            current_shard_size += (shard_end_offset - current_offset);
-            std::cout << "Current shard size: " << current_shard_size << " bytes" << std::endl;
-            current_offset = shard_end_offset;
-            std::cout << "Current offset after adding segment: " << current_offset << std::endl;
+            current_offset = line_end_offset;
+        }
+
+        // Handle the case where the last shard of this file is incomplete
+        if (current_shard_size > 0) {
+            current_shard.file_segments.emplace_back(file_name, shard_start_offset, current_offset);
+            std::cout<< "File: " << file_name << " Shard size: " << current_shard_size << std::endl;
+            std::cout<< "Start offset " << shard_start_offset << " End offset " << current_offset << std::endl;
         }
 
         file.close();
-        std::cout<<"File: " << file_name << ", Size: " << file_size << " bytes" << std::endl;
-        std::cout<<"Current Shard Size: " << current_shard_size << " bytes" << std::endl;
-        std::cout<<"Current Shard Segments: " << current_shard.file_segments.size() << std::endl;
     }
 
-    // Add the last shard if it contains any data
+    // Handle the case where the last shard spans multiple files
     if (!current_shard.file_segments.empty()) {
         file_shards.push_back(current_shard);
     }
