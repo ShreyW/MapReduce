@@ -191,9 +191,8 @@ void Worker::process_intermediate_file(const std::string& file_name, std::map<st
 /* Handle reduce tasks */
 void Worker::handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response) {
     std::string payload = request->payload();
-    std::string user_id = request->user_id();
+    std::string reduce_task_id = request->task_id();
     std::string output_dir = request->output_dir();
-    std::string task_id = request->task_id();
     std::vector<std::string> intermediate_files;
     size_t start = 0, end;
 
@@ -207,7 +206,7 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     auto reducer = get_reducer_from_task_factory("cs6210");
 
     auto reducer_impl = reducer->impl_;
-    reducer_impl->set_user_id(user_id);
+    reducer_impl->set_reduce_task_id(reduce_task_id);
     reducer_impl->set_output_dir(output_dir);
 
     // Aggregate key-value pairs from all intermediate files
@@ -221,9 +220,16 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
         reducer->reduce(key, values); // User-defined reduce function
     }
 
+    std::cout<< "Key value pairs emitted by reducer: " << std::endl;
+    for (const auto& [key, values] : key_value_map) {
+        for (const auto& value : values) {
+            std::cout << key << "," << value << std::endl; // Print the emitted key-value pairs
+        }
+    }
+
     // Set the response
-    response->set_task_id(task_id);
-    response->set_user_id(user_id);
+    response->set_task_id(reduce_task_id);
+    response->set_user_id(request->user_id());
     // std::cout << "Reduce task completed: " << request->task_id() << std::endl;
 
     reducer_impl->flush_emit_buffer(); // Flush the emit buffer to write output files to disk

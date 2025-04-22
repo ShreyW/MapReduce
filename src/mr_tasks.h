@@ -101,11 +101,11 @@ struct BaseReducerInternal {
 
     /* NOW you can add below, data members and member functions as per the need of your implementation */
     void flush_emit_buffer(); // Flush the emit buffer to disk (output files)
-    void set_user_id(std::string user_id) { user_id_ = user_id; }
+    void set_reduce_task_id(std::string reduce_task_id) { reduce_task_id_ = reduce_task_id; }
     void set_output_dir(std::string output_dir) { output_dir_ = output_dir; }                  
 
     private:
-        std::string user_id_;
+        std::string reduce_task_id_;
         std::string output_dir_;
         std::vector<std::pair<std::string, std::string>> emit_buffer_; // Emit buffer: one buffer for all key-value pairs
 };
@@ -125,7 +125,7 @@ inline void BaseReducerInternal::flush_emit_buffer() {
     //     std::cout << key << "," << val << std::endl;
     // }
     //Generate the file name for this partition
-    std::string file_name = output_dir_ + "/" + user_id_ + ".txt";
+    std::string file_name = output_dir_ + "/" + reduce_task_id_ + ".txt";
     
     // Open the file in append mode
     std::ofstream file(file_name, std::ios::app | std::ios::out);
