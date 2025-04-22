@@ -102,7 +102,7 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
 
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "Error: Unable to open file " << filename << std::endl;
+            std::cerr << "Error in process file shard: Unable to open file " << filename << std::endl;
             continue;
         }
 
@@ -112,6 +112,7 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
             if (file.tellg() > end_offset) {
                 break; // Stop reading if we exceed the end offset
             }
+            std::cout << "Processing line: " << line << std::endl; // Debugging line
             mapper->map(line);
         }
         file.close();
@@ -163,7 +164,7 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
 void Worker::process_intermediate_file(const std::string& file_name, std::map<std::string, std::vector<std::string>>& key_value_map) {
     std::ifstream infile(file_name);
     if (!infile.is_open()) {
-        std::cerr << "Warning: Unable to open intermediate file " << file_name << std::endl;
+        std::cerr << "Error in reducer, reading phase: Unable to open intermediate file " << file_name << std::endl;
         return; // Ignore missing files
     }
 

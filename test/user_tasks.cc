@@ -10,6 +10,7 @@ class UserMapper : public BaseMapper {
 
 	public:
     virtual void map(const std::string& input_line) override {
+	  std::cout << "UserMapper: " << input_line << std::endl;
       char * c_input = new char [input_line.length()+1];
       std::strcpy (c_input, input_line.c_str());
       static const char* delims = " ,.\"'";

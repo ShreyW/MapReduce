@@ -22,7 +22,7 @@ inline bool shard_files(const MapReduceSpec& mr_spec, std::vector<FileShard>& fi
     for (const auto& file_name : mr_spec.input_files) {
         std::ifstream file(file_name, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "Error: Unable to open file " << file_name << std::endl;
+            std::cerr << "Error in shard creation: Unable to open file " << file_name << std::endl;
             return false;
         }
 

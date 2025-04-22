@@ -147,7 +147,7 @@ bool Master::run() {
     std::cout << "Threads done!" << std::endl;
 
     // Remove intermediate files
-    remove_intermediate_files();
+    // remove_intermediate_files();
 
     std::cout << "MapReduce process completed successfully!" << std::endl;
     return true;
