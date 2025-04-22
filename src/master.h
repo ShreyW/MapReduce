@@ -309,29 +309,31 @@ void Master::ping_workers() {
 
         std::this_thread::sleep_for(std::chrono::seconds(5)); // Ping every 5 seconds
 
-        std::unique_lock<std::mutex> lock(mutex_);
-        for (auto& worker : workers_) {
-            if (worker.state == FAILED) {
-                continue; // Skip already failed workers
-            }
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            for (auto& worker : workers_) {
+                if (worker.state == FAILED) {
+                    continue; // Skip already failed workers
+                }
 
-            // Create a gRPC stub to communicate with the worker
-            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
-            auto stub = masterworker::MasterWorkerService::NewStub(channel);
+                // Create a gRPC stub to communicate with the worker
+                auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+                auto stub = masterworker::MasterWorkerService::NewStub(channel);
 
-            // Prepare the PingRequest
-            masterworker::PingRequest request;
-            masterworker::PingResponse response;
-            grpc::ClientContext context;
+                // Prepare the PingRequest
+                masterworker::PingRequest request;
+                masterworker::PingResponse response;
+                grpc::ClientContext context;
 
-            // Send the PingWorker RPC
-            grpc::Status status = stub->PingWorker(&context, request, &response);
+                // Send the PingWorker RPC
+                grpc::Status status = stub->PingWorker(&context, request, &response);
 
-            if (status.ok()) {
-                // Update the worker's last heartbeat timestamp
-                worker.last_heartbeat = std::chrono::steady_clock::now();
-            } else {
-                std::cerr << "Ping failed for worker " << worker.address << std::endl;
+                if (status.ok()) {
+                    // Update the worker's last heartbeat timestamp
+                    worker.last_heartbeat = std::chrono::steady_clock::now();
+                } else {
+                    std::cerr << "Ping failed for worker " << worker.address << std::endl;
+                }
             }
         }
     }
