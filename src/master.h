@@ -102,8 +102,8 @@ Master::Master(const MapReduceSpec& mr_spec, const std::vector<FileShard>& file_
     }
 
     // Print the number of file shards (M) and the number of output files (R)
-    std::cout << "Number of file shards (M): " << shards_.size() << std::endl;
-    std::cout << "Number of output files (R): " << spec_.n_output_files << std::endl;
+    // std::cout << "Number of file shards (M): " << shards_.size() << std::endl;
+    // std::cout << "Number of output files (R): " << spec_.n_output_files << std::endl;
 }
 
 /* CS6210_TASK: Here you go. once this function is called you will complete whole map reduce task and return true if succeeded */
@@ -133,7 +133,7 @@ bool Master::run() {
         cv_.wait(lock, [this]() { return completed_reduce_tasks_ == spec_.n_output_files; });
     }
 
-    std::cout << "All tasks completed successfully!" << std::endl;
+    // std::cout << "All tasks completed successfully!" << std::endl;
 
     // Signal threads to terminate
     {
@@ -146,10 +146,10 @@ bool Master::run() {
     monitor_thread_.join();
     response_thread.join();
 
-    std::cout << "Threads done!" << std::endl;
+    // std::cout << "Threads done!" << std::endl;
 
     // Remove intermediate files
-    //remove_intermediate_files();
+    remove_intermediate_files();
 
     std::cout << "MapReduce process completed successfully!" << std::endl;
     return true;
@@ -376,7 +376,7 @@ void Master::monitor_heartbeats() {
                             if (task.first.find("map") != std::string::npos) { // Failed mapper
                                 map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
                             } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                                std::cout << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
+                                // std::cout << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
                                 reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
                             }
                         }
@@ -422,37 +422,37 @@ void Master::handle_task_completion(const masterworker::TaskResult& result) {
             ++completed_reduce_tasks_;
         }
 
-        std::cout << "\n\nHandling completion: " << task_id << std::endl;
-        std::cout << "Task completed: " << task_id << std::endl;
-        std::cout << "Worker: " << worker_address << std::endl;
-        std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
-        std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
-        std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
-        std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
+        // std::cout << "\n\nHandling completion: " << task_id << std::endl;
+        // std::cout << "Task completed: " << task_id << std::endl;
+        // std::cout << "Worker: " << worker_address << std::endl;
+        // std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
+        // std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
+        // std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
+        // std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
 
         // Print worker states
-        std::cout << "Worker States:" << std::endl;
-        for (const auto& worker : workers_) {
-            std::cout << "Worker " << worker.address << ": ";
-            switch (worker.state) {
-                case AVAILABLE:
-                    std::cout << "AVAILABLE";
-                    break;
-                case BUSY:
-                    std::cout << "BUSY";
-                    break;
-                case FAILED:
-                    std::cout << "FAILED";
-                    break;
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "Worker States:" << std::endl;
+        // for (const auto& worker : workers_) {
+        //     std::cout << "Worker " << worker.address << ": ";
+        //     switch (worker.state) {
+        //         case AVAILABLE:
+        //             std::cout << "AVAILABLE";
+        //             break;
+        //         case BUSY:
+        //             std::cout << "BUSY";
+        //             break;
+        //         case FAILED:
+        //             std::cout << "FAILED";
+        //             break;
+        //     }
+        //     std::cout << std::endl;
+        // }
 
         // Print task-to-worker mappings
-        std::cout << "Task-to-Worker Mappings:" << std::endl;
-        for (const auto& task_mapping : task_to_worker_) {
-            std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
-        }
+        // std::cout << "Task-to-Worker Mappings:" << std::endl;
+        // for (const auto& task_mapping : task_to_worker_) {
+        //     std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
+        // }
     }
     cv_.notify_all();
 }
@@ -472,11 +472,11 @@ void Master::process_responses() {
         if (cq_.Next(&tag, &ok)) {
             if (ok) {
                 auto* call = static_cast<AsyncCall*>(tag);
-                std::cout << "Task ID: " << call->response.task_id() << std::endl;
-                std::cout << "User ID: " << call->response.user_id() << std::endl;
+                // std::cout << "Task ID: " << call->response.task_id() << std::endl;
+                // std::cout << "User ID: " << call->response.user_id() << std::endl;
 
                 if (call->status.ok()) {
-                    std::cout << "Task success for task_id: " << call->response.task_id() << std::endl;
+                    // std::cout << "Task success for task_id: " << call->response.task_id() << std::endl;
                     handle_task_completion(call->response); // Call handle_task_completion
                 } else {
                     std::cerr << "Error: Task failed for task_id: " << call->response.task_id() << std::endl;
@@ -489,7 +489,7 @@ void Master::process_responses() {
 }
 
 void Master::remove_intermediate_files() {
-    std::string directory = "./"; // Set the directory where intermediate files are stored
+    std::string directory = "."; // Set the directory where intermediate files are stored
     DIR* dir = opendir(directory.c_str());
     if (!dir) {
         std::cerr << "Error: Unable to open directory " << directory << std::endl;
@@ -502,7 +502,7 @@ void Master::remove_intermediate_files() {
         if (std::string(entry->d_name).rfind("intermediate_", 0) == 0) {
             std::string file_path = directory + "/" + entry->d_name;
             if (std::remove(file_path.c_str()) == 0) {
-                std::cout << "Removed file: " << file_path << std::endl;
+                // std::cout << "Removed file: " << file_path << std::endl;
             } else {
                 std::cerr << "Error: Unable to remove file " << file_path << std::endl;
             }

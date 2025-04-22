@@ -48,7 +48,7 @@ namespace {
 		
 		const std::string user_id = "cs6210";
 		if (!register_tasks(user_id, my_mapper, my_reducer)) {
-			std::cout << "Failed to register user_id: " << user_id << std::endl;	
+			// std::cout << "Failed to register user_id: " << user_id << std::endl;	
 			exit (EXIT_FAILURE);
 		}
 		return true;

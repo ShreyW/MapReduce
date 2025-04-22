@@ -44,12 +44,12 @@ inline void BaseMapperInternal::emit(const std::string& key, const std::string& 
 /* Flush the emit buffer to disk */
 inline void BaseMapperInternal::flush_emit_buffer() {
     //Print the emit buffer to the console
-    for (const auto& [partition, buffer] : emit_buffer_) {
+    // for (const auto& [partition, buffer] : emit_buffer_) {
         // std::cout << "Partition " << partition << " emit buffer contents:" << std::endl;
         // for (const auto& [key, val] : buffer) {
         //     std::cout << key << "," << val << std::endl;
         // }
-    }
+    // }
 
     for (const auto& [partition, buffer] : emit_buffer_) {
         // Generate the file name for this partition

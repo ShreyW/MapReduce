@@ -58,7 +58,7 @@ extern std::shared_ptr<BaseReducer> get_reducer_from_task_factory(const std::str
     BaseReducer's member BaseReducerInternal impl_ directly, 
     so you can manipulate them however you want when running map/reduce tasks */
 bool Worker::run() {
-    std::cout << "Worker starting on " << ip_addr_port_ << std::endl;
+    // std::cout << "Worker starting on " << ip_addr_port_ << std::endl;
 
     // Start the gRPC server
     grpc::ServerBuilder builder;
@@ -66,7 +66,7 @@ bool Worker::run() {
     builder.RegisterService(this);
 
     std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-    std::cout << "Worker listening on " << ip_addr_port_ << std::endl;
+    // std::cout << "Worker listening on " << ip_addr_port_ << std::endl;
     
     server->Wait();
     return true;
@@ -98,11 +98,11 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
         size_t start_offset = std::get<1>(file_segment);
         size_t end_offset = std::get<2>(file_segment);
 
-        std::cout << "Processing file segment: " 
-                  << "Filename: " << filename 
-                  << ", Start Offset: " << start_offset 
-                  << ", End Offset: " << end_offset 
-                  << std::endl;
+        // std::cout << "Processing file segment: " 
+        //           << "Filename: " << filename 
+        //           << ", Start Offset: " << start_offset 
+        //           << ", End Offset: " << end_offset 
+        //           << std::endl;
 
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
@@ -115,7 +115,7 @@ void Worker::process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> map
         // Read lines until the end offset is reached
 
         while (file.tellg() < end_offset && std::getline(file, line)) {
-            std::cout << "Current line read by worker " << ip_addr_port_ << ": " << line << std::endl;
+            // std::cout << "Current line read by worker " << ip_addr_port_ << ": " << line << std::endl;
             mapper->map(line);
         }
 
@@ -160,7 +160,7 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
 
     response->set_task_id(request->task_id());
     response->set_user_id(request->user_id());
-    std::cout << "Map task completed: " << request->task_id() << std::endl;
+    // std::cout << "Map task completed: " << request->task_id() << std::endl;
 }
 
 /* Process an intermediate file and aggregate key-value pairs */
@@ -168,7 +168,7 @@ void Worker::handle_map_task(const masterworker::TaskRequest* request, masterwor
 void Worker::process_intermediate_file(const std::string& file_name, std::map<std::string, std::vector<std::string>>& key_value_map) {
     std::ifstream infile(file_name);
     if (!infile.is_open()) {
-        std::cerr << "Error in reducer, reading phase: Unable to open intermediate file " << file_name << std::endl;
+        // std::cerr << "Error in reducer, reading phase: Unable to open intermediate file " << file_name << std::endl;
         return; // Ignore missing files
     }
 
@@ -224,10 +224,10 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
     // Set the response
     response->set_task_id(task_id);
     response->set_user_id(user_id);
-    std::cout << "Reduce task completed: " << request->task_id() << std::endl;
+    // std::cout << "Reduce task completed: " << request->task_id() << std::endl;
 
     reducer_impl->flush_emit_buffer(); // Flush the emit buffer to write output files to disk
-    std::cout << "Output files written to: " << output_dir << std::endl;
+    // std::cout << "Output files written to: " << output_dir << std::endl;
 }
 
 /* gRPC method to handle ping requests */
