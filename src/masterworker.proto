@@ -15,6 +15,11 @@ message TaskResult {
   string user_id = 2;          // User ID
 }
 
+message PingRequest {}
+
+message PingResponse {}
+
 service MasterWorkerService {
+  rpc PingWorker(PingRequest) returns (PingResponse);
   rpc ExecuteTask(TaskRequest) returns (TaskResult);
 }

@@ -15,7 +15,10 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/alarm.h>
 
-std::string const FILE_DIR = "intermediate/";
+#include <dirent.h> 
+#include <cstdio> // for std::remove
+
+//std::string const INTERMEDIATE_FILE_DIR = "";
 
 enum WorkerState {
     AVAILABLE,
@@ -53,6 +56,10 @@ class Master {
         void handle_task_completion(const masterworker::TaskResult& result);
         void schedule_backup_tasks();
         void process_responses();
+        void remove_intermediate_files();
+
+        void ping_workers();       // Thread to ping workers
+        void monitor_heartbeats(); // Thread to monitor worker heartbeats
 
         MapReduceSpec spec_;
         std::vector<FileShard> shards_;
@@ -66,6 +73,9 @@ class Master {
         std::unordered_map<std::string, std::string> task_to_worker_; // Maps task_id to worker address
         std::unordered_map<int, std::vector<std::string>> reduce_task_to_files_;
         grpc::CompletionQueue cq_; // Completion queue for asynchronous gRPC calls
+        bool done_ = false; // Flag to indicate when to stop the helper threads
+        std::thread ping_thread_;       // Thread for pinging workers
+        std::thread monitor_thread_;   // Thread for monitoring heartbeats
 };
 
 
@@ -88,12 +98,17 @@ Master::Master(const MapReduceSpec& mr_spec, const std::vector<FileShard>& file_
     for (int i = 0; i < spec_.n_output_files; ++i) {
         reduce_task_queue_.push(i);
     }
+
+    // Print the number of file shards (M) and the number of output files (R)
+    std::cout << "Number of file shards (M): " << shards_.size() << std::endl;
+    std::cout << "Number of output files (R): " << spec_.n_output_files << std::endl;
 }
 
 /* CS6210_TASK: Here you go. once this function is called you will complete whole map reduce task and return true if succeeded */
 bool Master::run() {
-    // Start worker monitoring in a separate thread
-    std::thread monitor_thread(&Master::monitor_workers, this);
+    // Start the ping and monitor threads
+    ping_thread_ = std::thread(&Master::ping_workers, this);
+    monitor_thread_ = std::thread(&Master::monitor_heartbeats, this);
 
     // Start processing responses in a separate thread
     std::thread response_thread(&Master::process_responses, this);
@@ -116,10 +131,23 @@ bool Master::run() {
         cv_.wait(lock, [this]() { return completed_reduce_tasks_ == spec_.n_output_files; });
     }
 
+    std::cout << "All tasks completed successfully!" << std::endl;
+
+    // Signal threads to terminate
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        done_ = true;
+    }
+
     // Join threads
-    monitor_thread.join();
-    cq_.Shutdown();
+    ping_thread_.join();
+    monitor_thread_.join();
     response_thread.join();
+
+    std::cout << "Threads done!" << std::endl;
+
+    // Remove intermediate files
+    remove_intermediate_files();
 
     std::cout << "MapReduce process completed successfully!" << std::endl;
     return true;
@@ -127,101 +155,190 @@ bool Master::run() {
 
 void Master::assign_map_tasks() {
     int map_task_counter = 0;
-    for (auto& worker : workers_) {
-        if (worker.state == AVAILABLE && !map_task_queue_.empty()) {
-            // Get the next shard from the queue
-            FileShard shard_group = map_task_queue_.front();
-            map_task_queue_.pop();
-
-            // Create gRPC client and assign task
-            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
-            auto stub = masterworker::MasterWorkerService::NewStub(channel);
-
-            masterworker::TaskRequest task;
-            task.set_task_id("map_" + std::to_string(map_task_counter++)); // Unique task ID
-
-            // Serialize the FileShard into the payload
-            std::string payload;
-            for (const auto& segment : shard_group.file_segments) {
-                const std::string& file_name = std::get<0>(segment);
-                size_t start_offset = std::get<1>(segment);
-                size_t end_offset = std::get<2>(segment);
-                payload += file_name + ":" + std::to_string(start_offset) + "-" + std::to_string(end_offset) + ";";
+    while(completed_map_tasks_ != shards_.size()) {
+        for (auto& worker : workers_) {
+            if (worker.state == AVAILABLE && !map_task_queue_.empty()) {
+                // Get the next shard from the queue
+                FileShard shard_group = map_task_queue_.front();
+                map_task_queue_.pop();
+    
+                // Create gRPC client and assign task
+                auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+                auto stub = masterworker::MasterWorkerService::NewStub(channel);
+    
+                masterworker::TaskRequest task;
+                task.set_task_id("map_" + std::to_string(map_task_counter++)); // Unique task ID
+    
+                // Serialize the FileShard into the payload
+                std::string payload;
+                for (const auto& segment : shard_group.file_segments) {
+                    const std::string& file_name = std::get<0>(segment);
+                    size_t start_offset = std::get<1>(segment);
+                    size_t end_offset = std::get<2>(segment);
+                    payload += file_name + ":" + std::to_string(start_offset) + "-" + std::to_string(end_offset) + ";";
+                }
+                task.set_payload(payload);
+                task.set_num_reducers(spec_.n_output_files); // Include the number of reducers (R)
+                task.set_user_id(worker.address); // Include user ID
+    
+                // Asynchronous gRPC call
+                auto* call = new AsyncCall;
+                call->response_reader = stub->AsyncExecuteTask(&call->context, task, &cq_);
+                call->response_reader->Finish(&call->response, &call->status, (void*)call);
+    
+                worker.state = BUSY;
+                task_to_worker_[task.task_id()] = worker.address;
             }
-            task.set_payload(payload);
-            task.set_num_reducers(spec_.n_output_files); // Include the number of reducers (R)
-            task.set_user_id(worker.address); // Include user ID
-
-            // Asynchronous gRPC call
-            auto* call = new AsyncCall;
-            call->response_reader = stub->AsyncExecuteTask(&call->context, task, &cq_);
-            call->response_reader->Finish(&call->response, &call->status, (void*)call);
-
-            worker.state = BUSY;
-            task_to_worker_[task.task_id()] = worker.address;
         }
     }
 }
 
 void Master::assign_reduce_tasks() {
-    int num_mappers = spec_.worker_ipaddr_ports.size(); // Number of mappers (M)
     int num_reducers = spec_.n_output_files;           // Number of reducers (R)
+    while(completed_reduce_tasks_ != num_reducers) {
+        for (auto& worker : workers_) {
+            if (worker.state == AVAILABLE && !reduce_task_queue_.empty()) {
+                int reduce_task_id = reduce_task_queue_.front();
+                reduce_task_queue_.pop();
 
-    for (auto& worker : workers_) {
-        if (worker.state == AVAILABLE && !reduce_task_queue_.empty()) {
-            int reduce_task_id = reduce_task_queue_.front();
-            reduce_task_queue_.pop();
+                // Create gRPC client and assign task
+                auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+                auto stub = masterworker::MasterWorkerService::NewStub(channel);
 
-            // Create gRPC client and assign task
-            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
-            auto stub = masterworker::MasterWorkerService::NewStub(channel);
+                masterworker::TaskRequest task;
+                task.set_task_id("reduce_" + std::to_string(reduce_task_id));
 
-            masterworker::TaskRequest task;
-            task.set_task_id("reduce_" + std::to_string(reduce_task_id));
+                // Collect intermediate files for this reduce task
+                std::string intermediate_files;
+                for (const auto& mapper_id : spec_.worker_ipaddr_ports) {
+                    intermediate_files += "intermediate_" + mapper_id + "," + std::to_string(reduce_task_id) + ".txt;";
+                }
+                task.set_payload(intermediate_files);
+                task.set_user_id(worker.address); // Include user ID
+                task.set_output_dir(spec_.output_dir); // Include output directory
 
-            // Collect intermediate files for this reduce task
-            std::string intermediate_files;
-            for (const auto& mapper_id : spec_.worker_ipaddr_ports) {
-                intermediate_files += FILE_DIR + mapper_id + "," + std::to_string(reduce_task_id) + ".txt;";
+                // Asynchronous gRPC call
+                auto* call = new AsyncCall;
+                call->response_reader = stub->AsyncExecuteTask(&call->context, task, &cq_);
+                call->response_reader->Finish(&call->response, &call->status, (void*)call);
+
+                worker.state = BUSY;
+                task_to_worker_[task.task_id()] = worker.address;
             }
-            task.set_payload(intermediate_files);
-            task.set_user_id(worker.address); // Include user ID
-            task.set_output_dir(spec_.output_dir); // Include output directory
-
-            // Asynchronous gRPC call
-            auto* call = new AsyncCall;
-            call->response_reader = stub->AsyncExecuteTask(&call->context, task, &cq_);
-            call->response_reader->Finish(&call->response, &call->status, (void*)call);
-
-            worker.state = BUSY;
-            task_to_worker_[task.task_id()] = worker.address;
         }
     }
+
 }
 
 // Assumption: All mappers must complete before the reduce phase begins.
 // Therefore, there is no need to notify reducers of mapper failures.
 
-// Instead of pinging and waiting for a response, the workers heartbeat periodically
 void Master::monitor_workers() {
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(5)); // Check every 5 seconds
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            if (done_) {
+                break; // Exit the thread if the done_ flag is set
+            }
+        }
 
         std::unique_lock<std::mutex> lock(mutex_);
         for (auto& worker : workers_) {
-            if (worker.state == BUSY &&
-                std::chrono::steady_clock::now() - worker.last_heartbeat > std::chrono::seconds(10)) {
+            if (worker.state == FAILED) {
+                continue; // Skip already failed workers
+            }
+            if(worker.last_heartbeat + std::chrono::seconds(10) < std::chrono::steady_clock::now()) {
                 // Worker failed
-                std::cerr << "Worker " << worker.address << " failed!" << std::endl;
-                worker.state = FAILED; // considered unavailable for the rest of the runtime
+                std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
+                worker.state = FAILED;
 
                 // Reassign tasks assigned to this worker
                 for (const auto& task : task_to_worker_) {
                     if (task.second == worker.address) {
                         if (task.first.find("map") != std::string::npos) { // Failed mapper
-                            map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Fileshard to next available mapper
+                            map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
                         } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                            reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Intermediate file taks to next available reducer
+                            reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                        }
+                    }
+                }
+            }
+        }
+        cv_.notify_all();
+    }
+}
+
+void Master::ping_workers() {
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            if (done_) {
+                break; // Exit the thread if the done_ flag is set
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(5)); // Ping every 5 seconds
+
+        std::unique_lock<std::mutex> lock(mutex_);
+        for (auto& worker : workers_) {
+            if (worker.state == FAILED) {
+                continue; // Skip already failed workers
+            }
+
+            // Create a gRPC stub to communicate with the worker
+            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+            auto stub = masterworker::MasterWorkerService::NewStub(channel);
+
+            // Prepare the PingRequest
+            masterworker::PingRequest request;
+            masterworker::PingResponse response;
+            grpc::ClientContext context;
+
+            // Send the PingWorker RPC
+            grpc::Status status = stub->PingWorker(&context, request, &response);
+
+            if (status.ok()) {
+                // Update the worker's last heartbeat timestamp
+                worker.last_heartbeat = std::chrono::steady_clock::now();
+            } else {
+                std::cerr << "Ping failed for worker " << worker.address << std::endl;
+            }
+        }
+    }
+}
+
+void Master::monitor_heartbeats() {
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            if (done_) {
+                break; // Exit the thread if the done_ flag is set
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(5)); // Check every 5 seconds
+
+        std::unique_lock<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+        for (auto& worker : workers_) {
+            if (worker.state == FAILED) {
+                continue; // Skip already failed workers
+            }
+
+            // Check if more than 10 seconds have passed since the last heartbeat
+            if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > 10) {
+                // Worker failed
+                std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
+                worker.state = FAILED;
+
+                // Reassign tasks assigned to this worker
+                for (const auto& task : task_to_worker_) {
+                    if (task.second == worker.address) {
+                        if (task.first.find("map") != std::string::npos) { // Failed mapper
+                            map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
+                        } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
+                            std::cout << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
+                            reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
                         }
                     }
                 }
@@ -232,6 +349,8 @@ void Master::monitor_workers() {
 }
 
 void Master::handle_task_completion(const masterworker::TaskResult& result) {
+
+
     std::unique_lock<std::mutex> lock(mutex_);
     if (result.task_id().find("map") != std::string::npos) {
         ++completed_map_tasks_;
@@ -247,6 +366,37 @@ void Master::handle_task_completion(const masterworker::TaskResult& result) {
         }
     }
 
+    std::cout << "\n\nHandling completion: " << result.task_id() << std::endl;
+    std::cout << "Task completed: " << result.task_id() << std::endl;
+    std::cout << "Worker: " << result.user_id() << std::endl;
+    std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
+    std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
+    std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
+    std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
+    // Print worker states
+    std::cout << "Worker States:" << std::endl;
+    for (const auto& worker : workers_) {
+        std::cout << "Worker " << worker.address << ": ";
+        switch (worker.state) {
+            case AVAILABLE:
+                std::cout << "AVAILABLE";
+                break;
+            case BUSY:
+                std::cout << "BUSY";
+                break;
+            case FAILED:
+                std::cout << "FAILED";
+                break;
+        }
+        std::cout << std::endl;
+    }
+
+    // Print task-to-worker mappings
+    std::cout << "Task-to-Worker Mappings:" << std::endl;
+    for (const auto& task_mapping : task_to_worker_) {
+        std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
+    }
+
     cv_.notify_all();
 }
 
@@ -254,20 +404,66 @@ void Master::process_responses() {
     void* tag;
     bool ok;
 
-    while (cq_.Next(&tag, &ok)) {
-        if (ok) {
-            auto* call = static_cast<AsyncCall*>(tag);
-            std::cout << "Task ID: " << call->response.task_id() << std::endl;
-            std::cout << "User ID: " << call->response.user_id() << std::endl;
-
-            if (call->status.ok()) {
-                std::cout << "Task success for task_id: " << call->response.task_id() << std::endl;
-                handle_task_completion(call->response); // Call handle_task_completion
-            } else {
-                std::cerr << "Error: Task failed for task_id: " << call->response.task_id() << std::endl;
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            if (done_) {
+                break; // Exit the thread if the done_ flag is set
             }
+        }
 
-            delete call; // Clean up the call object
+        if (cq_.Next(&tag, &ok)) {
+            if (ok) {
+                auto* call = static_cast<AsyncCall*>(tag);
+                std::cout << "Task ID: " << call->response.task_id() << std::endl;
+                std::cout << "User ID: " << call->response.user_id() << std::endl;
+
+                if (call->status.ok()) {
+                    std::cout << "Task success for task_id: " << call->response.task_id() << std::endl;
+                    handle_task_completion(call->response); // Call handle_task_completion
+                } else {
+                    std::cerr << "Error: Task failed for task_id: " << call->response.task_id() << std::endl;
+                }
+
+                delete call; // Clean up the call object
+            }
         }
     }
+}
+
+void Master::remove_intermediate_files() {
+    std::string directory = "./"; // Set the directory where intermediate files are stored
+    DIR* dir = opendir(directory.c_str());
+    if (!dir) {
+        std::cerr << "Error: Unable to open directory " << directory << std::endl;
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        // Check if the file name starts with "intermediate_"
+        if (std::string(entry->d_name).rfind("intermediate_", 0) == 0) {
+            std::string file_path = directory + "/" + entry->d_name;
+            if (std::remove(file_path.c_str()) == 0) {
+                std::cout << "Removed file: " << file_path << std::endl;
+            } else {
+                std::cerr << "Error: Unable to remove file " << file_path << std::endl;
+            }
+        }
+    }
+
+    closedir(dir);
+}
+
+class Worker : public masterworker::MasterWorkerService::Service {
+public:
+    grpc::Status PingWorker(grpc::ServerContext* context,
+                            const masterworker::PingRequest* request,
+                            masterworker::PingResponse* response) override;
+};
+
+grpc::Status Worker::PingWorker(grpc::ServerContext* context,
+                                const masterworker::PingRequest* request,
+                                masterworker::PingResponse* response) {
+    return grpc::Status::OK;
 }

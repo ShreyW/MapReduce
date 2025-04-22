@@ -23,7 +23,41 @@ class TaskResultDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TaskResult> _instance;
 } _TaskResult_default_instance_;
+class PingRequestDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PingRequest> _instance;
+} _PingRequest_default_instance_;
+class PingResponseDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PingResponse> _instance;
+} _PingResponse_default_instance_;
 }  // namespace masterworker
+static void InitDefaultsscc_info_PingRequest_masterworker_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::masterworker::_PingRequest_default_instance_;
+    new (ptr) ::masterworker::PingRequest();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PingRequest_masterworker_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PingRequest_masterworker_2eproto}, {}};
+
+static void InitDefaultsscc_info_PingResponse_masterworker_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::masterworker::_PingResponse_default_instance_;
+    new (ptr) ::masterworker::PingResponse();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PingResponse_masterworker_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PingResponse_masterworker_2eproto}, {}};
+
 static void InitDefaultsscc_info_TaskRequest_masterworker_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -50,7 +84,7 @@ static void InitDefaultsscc_info_TaskResult_masterworker_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TaskResult_masterworker_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TaskResult_masterworker_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_masterworker_2eproto[2];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_masterworker_2eproto[4];
 static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_masterworker_2eproto = nullptr;
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_masterworker_2eproto = nullptr;
 
@@ -72,15 +106,29 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_masterworker_2eproto::offsets[
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::masterworker::TaskResult, task_id_),
   PROTOBUF_FIELD_OFFSET(::masterworker::TaskResult, user_id_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::masterworker::PingRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::masterworker::PingResponse, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::masterworker::TaskRequest)},
   { 10, -1, sizeof(::masterworker::TaskResult)},
+  { 17, -1, sizeof(::masterworker::PingRequest)},
+  { 22, -1, sizeof(::masterworker::PingResponse)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::masterworker::_TaskRequest_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::masterworker::_TaskResult_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::masterworker::_PingRequest_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::masterworker::_PingResponse_default_instance_),
 };
 
 const char descriptor_table_protodef_masterworker_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -88,23 +136,27 @@ const char descriptor_table_protodef_masterworker_2eproto[] PROTOBUF_SECTION_VAR
   "skRequest\022\017\n\007task_id\030\001 \001(\t\022\017\n\007payload\030\002 "
   "\001(\t\022\017\n\007user_id\030\003 \001(\t\022\024\n\014num_reducers\030\004 \001"
   "(\005\022\022\n\noutput_dir\030\005 \001(\t\".\n\nTaskResult\022\017\n\007"
-  "task_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t2Y\n\023Master"
-  "WorkerService\022B\n\013ExecuteTask\022\031.masterwor"
-  "ker.TaskRequest\032\030.masterworker.TaskResul"
-  "tb\006proto3"
+  "task_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\"\r\n\013PingRe"
+  "quest\"\016\n\014PingResponse2\236\001\n\023MasterWorkerSe"
+  "rvice\022C\n\nPingWorker\022\031.masterworker.PingR"
+  "equest\032\032.masterworker.PingResponse\022B\n\013Ex"
+  "ecuteTask\022\031.masterworker.TaskRequest\032\030.m"
+  "asterworker.TaskResultb\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_masterworker_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_masterworker_2eproto_sccs[2] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_masterworker_2eproto_sccs[4] = {
+  &scc_info_PingRequest_masterworker_2eproto.base,
+  &scc_info_PingResponse_masterworker_2eproto.base,
   &scc_info_TaskRequest_masterworker_2eproto.base,
   &scc_info_TaskResult_masterworker_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_masterworker_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_masterworker_2eproto = {
-  false, false, descriptor_table_protodef_masterworker_2eproto, "masterworker.proto", 289,
-  &descriptor_table_masterworker_2eproto_once, descriptor_table_masterworker_2eproto_sccs, descriptor_table_masterworker_2eproto_deps, 2, 0,
+  false, false, descriptor_table_protodef_masterworker_2eproto, "masterworker.proto", 390,
+  &descriptor_table_masterworker_2eproto_once, descriptor_table_masterworker_2eproto_sccs, descriptor_table_masterworker_2eproto_deps, 4, 0,
   schemas, file_default_instances, TableStruct_masterworker_2eproto::offsets,
-  file_level_metadata_masterworker_2eproto, 2, file_level_enum_descriptors_masterworker_2eproto, file_level_service_descriptors_masterworker_2eproto,
+  file_level_metadata_masterworker_2eproto, 4, file_level_enum_descriptors_masterworker_2eproto, file_level_service_descriptors_masterworker_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -702,6 +754,330 @@ void TaskResult::InternalSwap(TaskResult* other) {
 }
 
 
+// ===================================================================
+
+class PingRequest::_Internal {
+ public:
+};
+
+PingRequest::PingRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:masterworker.PingRequest)
+}
+PingRequest::PingRequest(const PingRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:masterworker.PingRequest)
+}
+
+void PingRequest::SharedCtor() {
+}
+
+PingRequest::~PingRequest() {
+  // @@protoc_insertion_point(destructor:masterworker.PingRequest)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void PingRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void PingRequest::ArenaDtor(void* object) {
+  PingRequest* _this = reinterpret_cast< PingRequest* >(object);
+  (void)_this;
+}
+void PingRequest::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void PingRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const PingRequest& PingRequest::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PingRequest_masterworker_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void PingRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:masterworker.PingRequest)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* PingRequest::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* PingRequest::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:masterworker.PingRequest)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:masterworker.PingRequest)
+  return target;
+}
+
+size_t PingRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:masterworker.PingRequest)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void PingRequest::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:masterworker.PingRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  const PingRequest* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PingRequest>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:masterworker.PingRequest)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:masterworker.PingRequest)
+    MergeFrom(*source);
+  }
+}
+
+void PingRequest::MergeFrom(const PingRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:masterworker.PingRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+}
+
+void PingRequest::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:masterworker.PingRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void PingRequest::CopyFrom(const PingRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:masterworker.PingRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool PingRequest::IsInitialized() const {
+  return true;
+}
+
+void PingRequest::InternalSwap(PingRequest* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata PingRequest::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
+class PingResponse::_Internal {
+ public:
+};
+
+PingResponse::PingResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:masterworker.PingResponse)
+}
+PingResponse::PingResponse(const PingResponse& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:masterworker.PingResponse)
+}
+
+void PingResponse::SharedCtor() {
+}
+
+PingResponse::~PingResponse() {
+  // @@protoc_insertion_point(destructor:masterworker.PingResponse)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void PingResponse::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void PingResponse::ArenaDtor(void* object) {
+  PingResponse* _this = reinterpret_cast< PingResponse* >(object);
+  (void)_this;
+}
+void PingResponse::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void PingResponse::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const PingResponse& PingResponse::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PingResponse_masterworker_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void PingResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:masterworker.PingResponse)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* PingResponse::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* PingResponse::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:masterworker.PingResponse)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:masterworker.PingResponse)
+  return target;
+}
+
+size_t PingResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:masterworker.PingResponse)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void PingResponse::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:masterworker.PingResponse)
+  GOOGLE_DCHECK_NE(&from, this);
+  const PingResponse* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PingResponse>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:masterworker.PingResponse)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:masterworker.PingResponse)
+    MergeFrom(*source);
+  }
+}
+
+void PingResponse::MergeFrom(const PingResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:masterworker.PingResponse)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+}
+
+void PingResponse::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:masterworker.PingResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void PingResponse::CopyFrom(const PingResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:masterworker.PingResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool PingResponse::IsInitialized() const {
+  return true;
+}
+
+void PingResponse::InternalSwap(PingResponse* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata PingResponse::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace masterworker
 PROTOBUF_NAMESPACE_OPEN
@@ -710,6 +1086,12 @@ template<> PROTOBUF_NOINLINE ::masterworker::TaskRequest* Arena::CreateMaybeMess
 }
 template<> PROTOBUF_NOINLINE ::masterworker::TaskResult* Arena::CreateMaybeMessage< ::masterworker::TaskResult >(Arena* arena) {
   return Arena::CreateMessageInternal< ::masterworker::TaskResult >(arena);
+}
+template<> PROTOBUF_NOINLINE ::masterworker::PingRequest* Arena::CreateMaybeMessage< ::masterworker::PingRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::masterworker::PingRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::masterworker::PingResponse* Arena::CreateMaybeMessage< ::masterworker::PingResponse >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::masterworker::PingResponse >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

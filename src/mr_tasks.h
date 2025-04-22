@@ -43,6 +43,7 @@ inline void BaseMapperInternal::emit(const std::string& key, const std::string& 
 
 /* Flush the emit buffer to disk */
 inline void BaseMapperInternal::flush_emit_buffer() {
+    // Print the emit buffer to the console
     // for (const auto& [partition, buffer] : emit_buffer_) {
     //     std::cout << "Partition " << partition << " emit buffer contents:" << std::endl;
     //     for (const auto& [key, val] : buffer) {
@@ -52,13 +53,13 @@ inline void BaseMapperInternal::flush_emit_buffer() {
 
     for (const auto& [partition, buffer] : emit_buffer_) {
         // Generate the file name for this partition
-        std::string file_name = "intermediate/" + user_id_ + "," + std::to_string(partition) + ".txt";
+        std::string file_name = "intermediate_" + user_id_ + "," + std::to_string(partition) + ".txt";
 
         // Open the file in append mode
         std::ofstream file(file_name, std::ios::out | std::ios::app);
          // Check if the file opened successfully
         if (!file.is_open()) {
-            std::cerr << "Error: Unable to open or create intermediate file " << file_name << std::endl;
+            std::cerr << "Error in mapper: Unable to open or create intermediate file " << file_name << std::endl;
             continue;
         }
 
@@ -124,11 +125,11 @@ inline void BaseReducerInternal::flush_emit_buffer() {
     // }
     //Generate the file name for this partition
     std::string file_name = output_dir_ + "/" + user_id_ + ".txt";
-
+    
     // Open the file in append mode
     std::ofstream file(file_name, std::ios::app | std::ios::out);
     if (!file.is_open()) {
-        std::cerr << "Error: Unable to open intermediate file " << file_name << std::endl;
+        std::cerr << "Error: Unable to open output file " << file_name << std::endl;
         return;
     }
 

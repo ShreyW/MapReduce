@@ -36,6 +36,13 @@ class MasterWorkerService final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
+    virtual ::grpc::Status PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::masterworker::PingResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>> AsyncPingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>>(AsyncPingWorkerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>> PrepareAsyncPingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>>(PrepareAsyncPingWorkerRaw(context, request, cq));
+    }
     virtual ::grpc::Status ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::masterworker::TaskResult* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::TaskResult>> AsyncExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::TaskResult>>(AsyncExecuteTaskRaw(context, request, cq));
@@ -46,6 +53,12 @@ class MasterWorkerService final {
     class experimental_async_interface {
      public:
       virtual ~experimental_async_interface() {}
+      virtual void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, std::function<void(::grpc::Status)>) = 0;
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      virtual void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      #else
+      virtual void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      #endif
       virtual void ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, std::function<void(::grpc::Status)>) = 0;
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       virtual void ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, ::grpc::ClientUnaryReactor* reactor) = 0;
@@ -61,12 +74,21 @@ class MasterWorkerService final {
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>* AsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::PingResponse>* PrepareAsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::TaskResult>* AsyncExecuteTaskRaw(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::masterworker::TaskResult>* PrepareAsyncExecuteTaskRaw(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    ::grpc::Status PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::masterworker::PingResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>> AsyncPingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>>(AsyncPingWorkerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>> PrepareAsyncPingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>>(PrepareAsyncPingWorkerRaw(context, request, cq));
+    }
     ::grpc::Status ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::masterworker::TaskResult* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::TaskResult>> AsyncExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::masterworker::TaskResult>>(AsyncExecuteTaskRaw(context, request, cq));
@@ -77,6 +99,12 @@ class MasterWorkerService final {
     class experimental_async final :
       public StubInterface::experimental_async_interface {
      public:
+      void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, std::function<void(::grpc::Status)>) override;
+      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      #else
+      void PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      #endif
       void ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, std::function<void(::grpc::Status)>) override;
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response, ::grpc::ClientUnaryReactor* reactor) override;
@@ -94,8 +122,11 @@ class MasterWorkerService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class experimental_async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>* AsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>* PrepareAsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::masterworker::TaskResult>* AsyncExecuteTaskRaw(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::masterworker::TaskResult>* PrepareAsyncExecuteTaskRaw(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_PingWorker_;
     const ::grpc::internal::RpcMethod rpcmethod_ExecuteTask_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -104,7 +135,28 @@ class MasterWorkerService final {
    public:
     Service();
     virtual ~Service();
+    virtual ::grpc::Status PingWorker(::grpc::ServerContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response);
     virtual ::grpc::Status ExecuteTask(::grpc::ServerContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_PingWorker() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestPingWorker(::grpc::ServerContext* context, ::masterworker::PingRequest* request, ::grpc::ServerAsyncResponseWriter< ::masterworker::PingResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
   };
   template <class BaseClass>
   class WithAsyncMethod_ExecuteTask : public BaseClass {
@@ -112,7 +164,7 @@ class MasterWorkerService final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_ExecuteTask() {
-      ::grpc::Service::MarkMethodAsync(0);
+      ::grpc::Service::MarkMethodAsync(1);
     }
     ~WithAsyncMethod_ExecuteTask() override {
       BaseClassMustBeDerivedFromService(this);
@@ -123,10 +175,57 @@ class MasterWorkerService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestExecuteTask(::grpc::ServerContext* context, ::masterworker::TaskRequest* request, ::grpc::ServerAsyncResponseWriter< ::masterworker::TaskResult>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_ExecuteTask<Service > AsyncService;
+  typedef WithAsyncMethod_PingWorker<WithAsyncMethod_ExecuteTask<Service > > AsyncService;
+  template <class BaseClass>
+  class ExperimentalWithCallbackMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    ExperimentalWithCallbackMethod_PingWorker() {
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::masterworker::PingRequest, ::masterworker::PingResponse>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response) { return this->PingWorker(context, request, response); }));}
+    void SetMessageAllocatorFor_PingWorker(
+        ::grpc::experimental::MessageAllocator< ::masterworker::PingRequest, ::masterworker::PingResponse>* allocator) {
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+    #else
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
+    #endif
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::masterworker::PingRequest, ::masterworker::PingResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~ExperimentalWithCallbackMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerUnaryReactor* PingWorker(
+      ::grpc::CallbackServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerUnaryReactor* PingWorker(
+      ::grpc::experimental::CallbackServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/)
+    #endif
+      { return nullptr; }
+  };
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_ExecuteTask : public BaseClass {
    private:
@@ -138,7 +237,7 @@ class MasterWorkerService final {
     #else
       ::grpc::Service::experimental().
     #endif
-        MarkMethodCallback(0,
+        MarkMethodCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::masterworker::TaskRequest, ::masterworker::TaskResult>(
             [this](
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -150,9 +249,9 @@ class MasterWorkerService final {
     void SetMessageAllocatorFor_ExecuteTask(
         ::grpc::experimental::MessageAllocator< ::masterworker::TaskRequest, ::masterworker::TaskResult>* allocator) {
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
     #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(1);
     #endif
       static_cast<::grpc::internal::CallbackUnaryHandler< ::masterworker::TaskRequest, ::masterworker::TaskResult>*>(handler)
               ->SetMessageAllocator(allocator);
@@ -175,17 +274,34 @@ class MasterWorkerService final {
       { return nullptr; }
   };
   #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  typedef ExperimentalWithCallbackMethod_ExecuteTask<Service > CallbackService;
+  typedef ExperimentalWithCallbackMethod_PingWorker<ExperimentalWithCallbackMethod_ExecuteTask<Service > > CallbackService;
   #endif
 
-  typedef ExperimentalWithCallbackMethod_ExecuteTask<Service > ExperimentalCallbackService;
+  typedef ExperimentalWithCallbackMethod_PingWorker<ExperimentalWithCallbackMethod_ExecuteTask<Service > > ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_PingWorker() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
   template <class BaseClass>
   class WithGenericMethod_ExecuteTask : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_ExecuteTask() {
-      ::grpc::Service::MarkMethodGeneric(0);
+      ::grpc::Service::MarkMethodGeneric(1);
     }
     ~WithGenericMethod_ExecuteTask() override {
       BaseClassMustBeDerivedFromService(this);
@@ -197,12 +313,32 @@ class MasterWorkerService final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_PingWorker() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestPingWorker(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawMethod_ExecuteTask : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_ExecuteTask() {
-      ::grpc::Service::MarkMethodRaw(0);
+      ::grpc::Service::MarkMethodRaw(1);
     }
     ~WithRawMethod_ExecuteTask() override {
       BaseClassMustBeDerivedFromService(this);
@@ -213,8 +349,46 @@ class MasterWorkerService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestExecuteTask(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
+  };
+  template <class BaseClass>
+  class ExperimentalWithRawCallbackMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    ExperimentalWithRawCallbackMethod_PingWorker() {
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+      ::grpc::Service::
+    #else
+      ::grpc::Service::experimental().
+    #endif
+        MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+                   ::grpc::CallbackServerContext*
+    #else
+                   ::grpc::experimental::CallbackServerContext*
+    #endif
+                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->PingWorker(context, request, response); }));
+    }
+    ~ExperimentalWithRawCallbackMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+    virtual ::grpc::ServerUnaryReactor* PingWorker(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
+    #else
+    virtual ::grpc::experimental::ServerUnaryReactor* PingWorker(
+      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
+    #endif
+      { return nullptr; }
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_ExecuteTask : public BaseClass {
@@ -227,7 +401,7 @@ class MasterWorkerService final {
     #else
       ::grpc::Service::experimental().
     #endif
-        MarkMethodRawCallback(0,
+        MarkMethodRawCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -255,12 +429,39 @@ class MasterWorkerService final {
       { return nullptr; }
   };
   template <class BaseClass>
+  class WithStreamedUnaryMethod_PingWorker : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_PingWorker() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::masterworker::PingRequest, ::masterworker::PingResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::masterworker::PingRequest, ::masterworker::PingResponse>* streamer) {
+                       return this->StreamedPingWorker(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_PingWorker() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status PingWorker(::grpc::ServerContext* /*context*/, const ::masterworker::PingRequest* /*request*/, ::masterworker::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedPingWorker(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::masterworker::PingRequest,::masterworker::PingResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_ExecuteTask : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_ExecuteTask() {
-      ::grpc::Service::MarkMethodStreamed(0,
+      ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
           ::masterworker::TaskRequest, ::masterworker::TaskResult>(
             [this](::grpc::ServerContext* context,
@@ -281,9 +482,9 @@ class MasterWorkerService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedExecuteTask(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::masterworker::TaskRequest,::masterworker::TaskResult>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_ExecuteTask<Service > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_PingWorker<WithStreamedUnaryMethod_ExecuteTask<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_ExecuteTask<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_PingWorker<WithStreamedUnaryMethod_ExecuteTask<Service > > StreamedService;
 };
 
 }  // namespace masterworker

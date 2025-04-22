@@ -31,11 +31,13 @@ class Worker : public masterworker::MasterWorkerService::Service {
                                  const masterworker::TaskRequest* request,
                                  masterworker::TaskResult* response) override;
 
+        grpc::Status PingWorker(grpc::ServerContext* context,
+                                const masterworker::PingRequest* request,
+                                masterworker::PingResponse* response) override;
+
         // Helper functions for task handling
         void handle_map_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response);
         void handle_reduce_task(const masterworker::TaskRequest* request, masterworker::TaskResult* response);
-            
-        // Reading of files and calling user-defined functions
         void process_file_shard(FileShard shard, std::shared_ptr<BaseMapper> mapper);
         void process_intermediate_file(const std::string& file_name, std::map<std::string, std::vector<std::string>>& key_value_map);
 };
@@ -234,4 +236,11 @@ void Worker::handle_reduce_task(const masterworker::TaskRequest* request, master
 
     reducer_impl->flush_emit_buffer(); // Flush the emit buffer to write output files to disk
     std::cout << "Output files written to: " << output_dir << std::endl;
+}
+
+/* gRPC method to handle ping requests */
+grpc::Status Worker::PingWorker(grpc::ServerContext* context,
+                                const masterworker::PingRequest* request,
+                                masterworker::PingResponse* response) {
+    return grpc::Status::OK;
 }

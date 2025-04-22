@@ -22,6 +22,7 @@
 namespace masterworker {
 
 static const char* MasterWorkerService_method_names[] = {
+  "/masterworker.MasterWorkerService/PingWorker",
   "/masterworker.MasterWorkerService/ExecuteTask",
 };
 
@@ -32,8 +33,32 @@ std::unique_ptr< MasterWorkerService::Stub> MasterWorkerService::NewStub(const s
 }
 
 MasterWorkerService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_ExecuteTask_(MasterWorkerService_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_PingWorker_(MasterWorkerService_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ExecuteTask_(MasterWorkerService_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
+
+::grpc::Status MasterWorkerService::Stub::PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::masterworker::PingResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::masterworker::PingRequest, ::masterworker::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_PingWorker_, context, request, response);
+}
+
+void MasterWorkerService::Stub::experimental_async::PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::masterworker::PingRequest, ::masterworker::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_PingWorker_, context, request, response, std::move(f));
+}
+
+void MasterWorkerService::Stub::experimental_async::PingWorker(::grpc::ClientContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_PingWorker_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>* MasterWorkerService::Stub::PrepareAsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::masterworker::PingResponse, ::masterworker::PingRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_PingWorker_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::masterworker::PingResponse>* MasterWorkerService::Stub::AsyncPingWorkerRaw(::grpc::ClientContext* context, const ::masterworker::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncPingWorkerRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
 
 ::grpc::Status MasterWorkerService::Stub::ExecuteTask(::grpc::ClientContext* context, const ::masterworker::TaskRequest& request, ::masterworker::TaskResult* response) {
   return ::grpc::internal::BlockingUnaryCall< ::masterworker::TaskRequest, ::masterworker::TaskResult, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ExecuteTask_, context, request, response);
@@ -62,6 +87,16 @@ MasterWorkerService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       MasterWorkerService_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< MasterWorkerService::Service, ::masterworker::PingRequest, ::masterworker::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](MasterWorkerService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::masterworker::PingRequest* req,
+             ::masterworker::PingResponse* resp) {
+               return service->PingWorker(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      MasterWorkerService_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MasterWorkerService::Service, ::masterworker::TaskRequest, ::masterworker::TaskResult, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MasterWorkerService::Service* service,
              ::grpc::ServerContext* ctx,
@@ -72,6 +107,13 @@ MasterWorkerService::Service::Service() {
 }
 
 MasterWorkerService::Service::~Service() {
+}
+
+::grpc::Status MasterWorkerService::Service::PingWorker(::grpc::ServerContext* context, const ::masterworker::PingRequest* request, ::masterworker::PingResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status MasterWorkerService::Service::ExecuteTask(::grpc::ServerContext* context, const ::masterworker::TaskRequest* request, ::masterworker::TaskResult* response) {
