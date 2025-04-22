@@ -147,7 +147,7 @@ bool Master::run() {
     std::cout << "Threads done!" << std::endl;
 
     // Remove intermediate files
-    // remove_intermediate_files();
+    remove_intermediate_files();
 
     std::cout << "MapReduce process completed successfully!" << std::endl;
     return true;
@@ -241,29 +241,30 @@ void Master::monitor_workers() {
                 break; // Exit the thread if the done_ flag is set
             }
         }
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            for (auto& worker : workers_) {
+                if (worker.state == FAILED) {
+                    continue; // Skip already failed workers
+                }
+                if(worker.last_heartbeat + std::chrono::seconds(10) < std::chrono::steady_clock::now()) {
+                    // Worker failed
+                    std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
+                    worker.state = FAILED;
 
-        std::unique_lock<std::mutex> lock(mutex_);
-        for (auto& worker : workers_) {
-            if (worker.state == FAILED) {
-                continue; // Skip already failed workers
-            }
-            if(worker.last_heartbeat + std::chrono::seconds(10) < std::chrono::steady_clock::now()) {
-                // Worker failed
-                std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
-                worker.state = FAILED;
-
-                // Reassign tasks assigned to this worker
-                for (const auto& task : task_to_worker_) {
-                    if (task.second == worker.address) {
-                        if (task.first.find("map") != std::string::npos) { // Failed mapper
-                            map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
-                        } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                            reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                    // Reassign tasks assigned to this worker
+                    for (const auto& task : task_to_worker_) {
+                        if (task.second == worker.address) {
+                            if (task.first.find("map") != std::string::npos) { // Failed mapper
+                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
+                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
+                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                            }
                         }
                     }
                 }
             }
-        }
+        }   
         cv_.notify_all();
     }
 }
@@ -278,30 +279,31 @@ void Master::ping_workers() {
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(5)); // Ping every 5 seconds
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            for (auto& worker : workers_) {
+                if (worker.state == FAILED) {
+                    continue; // Skip already failed workers
+                }
 
-        std::unique_lock<std::mutex> lock(mutex_);
-        for (auto& worker : workers_) {
-            if (worker.state == FAILED) {
-                continue; // Skip already failed workers
-            }
+                // Create a gRPC stub to communicate with the worker
+                auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
+                auto stub = masterworker::MasterWorkerService::NewStub(channel);
 
-            // Create a gRPC stub to communicate with the worker
-            auto channel = grpc::CreateChannel(worker.address, grpc::InsecureChannelCredentials());
-            auto stub = masterworker::MasterWorkerService::NewStub(channel);
+                // Prepare the PingRequest
+                masterworker::PingRequest request;
+                masterworker::PingResponse response;
+                grpc::ClientContext context;
 
-            // Prepare the PingRequest
-            masterworker::PingRequest request;
-            masterworker::PingResponse response;
-            grpc::ClientContext context;
+                // Send the PingWorker RPC
+                grpc::Status status = stub->PingWorker(&context, request, &response);
 
-            // Send the PingWorker RPC
-            grpc::Status status = stub->PingWorker(&context, request, &response);
-
-            if (status.ok()) {
-                // Update the worker's last heartbeat timestamp
-                worker.last_heartbeat = std::chrono::steady_clock::now();
-            } else {
-                std::cerr << "Ping failed for worker " << worker.address << std::endl;
+                if (status.ok()) {
+                    // Update the worker's last heartbeat timestamp
+                    worker.last_heartbeat = std::chrono::steady_clock::now();
+                } else {
+                    std::cerr << "Ping failed for worker " << worker.address << std::endl;
+                }
             }
         }
     }
@@ -317,28 +319,29 @@ void Master::monitor_heartbeats() {
         }
 
         std::this_thread::sleep_for(std::chrono::seconds(5)); // Check every 5 seconds
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            auto now = std::chrono::steady_clock::now();
+            for (auto& worker : workers_) {
+                if (worker.state == FAILED) {
+                    continue; // Skip already failed workers
+                }
 
-        std::unique_lock<std::mutex> lock(mutex_);
-        auto now = std::chrono::steady_clock::now();
-        for (auto& worker : workers_) {
-            if (worker.state == FAILED) {
-                continue; // Skip already failed workers
-            }
+                // Check if more than 10 seconds have passed since the last heartbeat
+                if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > 10) {
+                    // Worker failed
+                    std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
+                    worker.state = FAILED;
 
-            // Check if more than 10 seconds have passed since the last heartbeat
-            if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > 10) {
-                // Worker failed
-                std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
-                worker.state = FAILED;
-
-                // Reassign tasks assigned to this worker
-                for (const auto& task : task_to_worker_) {
-                    if (task.second == worker.address) {
-                        if (task.first.find("map") != std::string::npos) { // Failed mapper
-                            map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
-                        } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                            std::cout << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
-                            reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                    // Reassign tasks assigned to this worker
+                    for (const auto& task : task_to_worker_) {
+                        if (task.second == worker.address) {
+                            if (task.first.find("map") != std::string::npos) { // Failed mapper
+                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
+                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
+                                std::cout << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
+                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                            }
                         }
                     }
                 }
@@ -349,55 +352,55 @@ void Master::monitor_heartbeats() {
 }
 
 void Master::handle_task_completion(const masterworker::TaskResult& result) {
-
-
-    std::unique_lock<std::mutex> lock(mutex_);
-    if (result.task_id().find("map") != std::string::npos) {
-        ++completed_map_tasks_;
-    } else if (result.task_id().find("reduce") != std::string::npos) {
-        ++completed_reduce_tasks_;
-    }
-
-    // Mark worker as available
-    for (auto& worker : workers_) {
-        if (task_to_worker_[result.task_id()] == worker.address) {
-            worker.state = AVAILABLE;
-            break;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (result.task_id().find("map") != std::string::npos) {
+            ++completed_map_tasks_;
+        } else if (result.task_id().find("reduce") != std::string::npos) {
+            ++completed_reduce_tasks_;
         }
-    }
 
-    std::cout << "\n\nHandling completion: " << result.task_id() << std::endl;
-    std::cout << "Task completed: " << result.task_id() << std::endl;
-    std::cout << "Worker: " << result.user_id() << std::endl;
-    std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
-    std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
-    std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
-    std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
-    // Print worker states
-    std::cout << "Worker States:" << std::endl;
-    for (const auto& worker : workers_) {
-        std::cout << "Worker " << worker.address << ": ";
-        switch (worker.state) {
-            case AVAILABLE:
-                std::cout << "AVAILABLE";
+        // Mark worker as available
+        for (auto& worker : workers_) {
+            if (task_to_worker_[result.task_id()] == worker.address) {
+                worker.state = AVAILABLE;
                 break;
-            case BUSY:
-                std::cout << "BUSY";
-                break;
-            case FAILED:
-                std::cout << "FAILED";
-                break;
+            }
         }
-        std::cout << std::endl;
-    }
 
-    // Print task-to-worker mappings
-    std::cout << "Task-to-Worker Mappings:" << std::endl;
-    for (const auto& task_mapping : task_to_worker_) {
-        std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
-    }
+        std::cout << "\n\nHandling completion: " << result.task_id() << std::endl;
+        std::cout << "Task completed: " << result.task_id() << std::endl;
+        std::cout << "Worker: " << result.user_id() << std::endl;
+        std::cout << "Reduce task queue size: " << reduce_task_queue_.size() << std::endl;
+        std::cout << "Map task queue size: " << map_task_queue_.size() << std::endl;
+        std::cout << "Completed map tasks: " << completed_map_tasks_ << std::endl;
+        std::cout << "Completed reduce tasks: " << completed_reduce_tasks_ << std::endl;
+        // Print worker states
+        std::cout << "Worker States:" << std::endl;
+        for (const auto& worker : workers_) {
+            std::cout << "Worker " << worker.address << ": ";
+            switch (worker.state) {
+                case AVAILABLE:
+                    std::cout << "AVAILABLE";
+                    break;
+                case BUSY:
+                    std::cout << "BUSY";
+                    break;
+                case FAILED:
+                    std::cout << "FAILED";
+                    break;
+            }
+            std::cout << std::endl;
+        }
 
-    cv_.notify_all();
+        // Print task-to-worker mappings
+        std::cout << "Task-to-Worker Mappings:" << std::endl;
+        for (const auto& task_mapping : task_to_worker_) {
+            std::cout << "Task " << task_mapping.first << " -> Worker " << task_mapping.second << std::endl;
+        }
+
+        cv_.notify_all();
+    }
 }
 
 void Master::process_responses() {
