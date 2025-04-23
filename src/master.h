@@ -55,7 +55,6 @@ class Master {
         /* NOW you can add below, data members and member functions as per the need of your implementation */
         void assign_map_tasks();
         void assign_reduce_tasks();
-        void monitor_workers();
         void handle_task_completion(const masterworker::TaskResult& result);
         void schedule_backup_tasks();
         void process_responses();
@@ -187,8 +186,11 @@ void Master::assign_map_tasks() {
                 auto* call = new AsyncCall;
                 call->response_reader = stub->AsyncExecuteTask(&call->context, task, &cq_);
                 call->response_reader->Finish(&call->response, &call->status, (void*)call);
-    
+                
+
+                // Record the task to worker mapping
                 worker.state = BUSY;
+                std::cerr << "Assigned map task: " << task.task_id() << " to worker: " << worker.address << std::endl;
                 task_to_worker_[task.task_id()] = worker.address;
             }
         }
@@ -235,7 +237,7 @@ void Master::assign_reduce_tasks() {
 // Assumption: All mappers must complete before the reduce phase begins.
 // Therefore, there is no need to notify reducers of mapper failures.
 
-void Master::monitor_workers() {
+void Master::monitor_heartbeats() {
     while (true) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
@@ -252,46 +254,61 @@ void Master::monitor_workers() {
                 }
 
                 /// CHECK FOR FAILED WORKERS
-                if(worker.last_heartbeat + std::chrono::seconds(3) < std::chrono::steady_clock::now()) {
+                if(worker.last_heartbeat < std::chrono::steady_clock::now() - std::chrono::seconds(HEARTBEAT_RATE) ) {
                     // Worker failed
                     std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
                     worker.state = FAILED;
 
-                    // Remove all tasks assigned to this worker
-                    for (auto it = task_to_worker_.begin(); it != task_to_worker_.end();) {
-                        if (it->second == worker.address) {
-                            it = task_to_worker_.erase(it); // Remove the mapping
-                        } else {
-                            ++it;
+                    // Find the task assigned to this worker
+                    std::string failed_task_id;
+                    for (const auto& [task_id, assigned_worker] : task_to_worker_) {
+                        if (assigned_worker == worker.address) {
+                            failed_task_id = task_id;
+                            break;
                         }
                     }
+                    if (!failed_task_id.empty()) {
+                        std::cerr << "Failed task: " << failed_task_id << std::endl;
 
-                    // Reassign tasks assigned to this worker
-                    for (const auto& task : task_to_worker_) {
-                        if (task.second == worker.address) {
-                            if (task.first.find("map") != std::string::npos) { // Failed mapper
-                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
-                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
-                            }
-                        }
-                    }
-                }
+                        // Remove the task-to-worker mapping
+                        task_to_worker_.erase(failed_task_id);
 
-                // CHECK FOR STRAGGLERS
-                if (worker.state == BUSY && std::chrono::steady_clock::now() - worker.last_heartbeat > std::chrono::seconds(STRAGGLER_MARGIN)) {
-                    std::cerr << "Worker " << worker.address << " is a straggler!" << std::endl;
-                    // Reassign tasks assigned to this worker without marking it as failed
-                    for (const auto& task : task_to_worker_) {
-                        if (task.second == worker.address) {
-                            if (task.first.find("map") != std::string::npos) { // Failed mapper
-                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
-                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                        // Reassign the task to the appropriate queue
+                        if (failed_task_id.find("map") != std::string::npos) { // Failed mapper
+                            int map_task_number = std::stoi(failed_task_id.substr(4));
+                            map_task_queue_.push(shards_[map_task_number]); // Reassign file shard
+                            std::cerr << "Reassigning map task: " << failed_task_id << " to a new worker." << std::endl;
+
+                            const auto& shard = shards_[map_task_number];
+                            for (const auto& segment : shard.file_segments) {
+                                std::cerr << "File: " << std::get<0>(segment)
+                                            << ", Start Offset: " << std::get<1>(segment)
+                                            << ", End Offset: " << std::get<2>(segment) << std::endl;
                             }
+                        } else if (failed_task_id.find("reduce") != std::string::npos) { // Failed reducer
+                            int reduce_task_number = std::stoi(failed_task_id.substr(7));
+                            reduce_task_queue_.push(reduce_task_number); // Reassign reduce task
+                            std::cerr << "Reassigning reduce task: " << failed_task_id << " to a new worker." << std::endl;
                         }
+                    } else {
+                        std::cerr << "No tasks assigned to this worker." << std::endl;
                     }
-                }
+}
+
+                // // CHECK FOR STRAGGLERS
+                // if (worker.state == BUSY && std::chrono::steady_clock::now() - worker.last_heartbeat > std::chrono::seconds(STRAGGLER_MARGIN)) {
+                //     std::cerr << "Worker " << worker.address << " is a straggler!" << std::endl;
+                //     // Reassign tasks assigned to this worker without marking it as failed
+                //     for (const auto& task : task_to_worker_) {
+                //         if (task.second == worker.address) {
+                //             if (task.first.find("map") != std::string::npos) { // Failed mapper
+                //                 map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
+                //             } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
+                //                 reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
+                //             }
+                //         }
+                //     }
+                // }
             }
         }
         cv_.notify_all();
@@ -336,57 +353,6 @@ void Master::ping_workers() {
                 }
             }
         }
-    }
-}
-
-void Master::monitor_heartbeats() {
-    while (true) {
-        {
-            std::unique_lock<std::mutex> lock(mutex_);
-            if (done_) {
-                break; // Exit the thread if the done_ flag is set
-            }
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(HEARTBEAT_RATE)); // Check every HEARTBEAT_RATE seconds
-        {
-            std::unique_lock<std::mutex> lock(mutex_);
-            auto now = std::chrono::steady_clock::now();
-            for (auto& worker : workers_) {
-                if (worker.state == FAILED) {
-                    continue; // Skip already failed workers
-                }
-    
-                // Check if more than 10 seconds have passed since the last heartbeat
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - worker.last_heartbeat).count() > HEARTBEAT_RATE) {
-                    // Worker failed
-                    std::cerr << "Worker " << worker.address << " failed due to missed heartbeat!" << std::endl;
-                    worker.state = FAILED;
-    
-                    // Remove all tasks assigned to this worker
-                    for (auto it = task_to_worker_.begin(); it != task_to_worker_.end();) {
-                        if (it->second == worker.address) {
-                            it = task_to_worker_.erase(it); // Remove the mapping
-                        } else {
-                            ++it;
-                        }
-                    }
-    
-                    // Reassign tasks assigned to this worker
-                    for (const auto& task : task_to_worker_) {
-                        if (task.second == worker.address) {
-                            if (task.first.find("map") != std::string::npos) { // Failed mapper
-                                map_task_queue_.push(shards_[std::stoi(task.first.substr(4))]); // Reassign file shard
-                            } else if (task.first.find("reduce") != std::string::npos) { // Failed reducer
-                                // std::cerr << "Reassigning reduce task: " << task.first.substr(7) << std::endl;
-                                reduce_task_queue_.push(std::stoi(task.first.substr(7))); // Reassign reduce task
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        cv_.notify_all();
     }
 }
 

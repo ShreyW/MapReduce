@@ -105,6 +105,11 @@ class MapReduceTestRunner:
         output_dir = self.bin_dir / "output"
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
+        else:
+            for file in os.listdir(output_dir):
+                os.remove(output_dir / file)
+        print(f"Output directory cleaned: {output_dir}")
+
         
         # Start the MapReduce demo
         cmd = ['./mrdemo', 'config.ini']
