@@ -1,5 +1,5 @@
 # AOS CS6210 Project 4 - MapReduce
-## Shrey Whadawan and Juan Macias Romero
+## Shrey Wadhawan and Juan Macias Romero
 
 # Assumptions and implementation notes
 - All possible mapper-reducer pairs are considered when creating intermediate files. Each mapper will write to XX_YY.tx, where XX is the mapper_id and YY is the hash of the number of reducers. This means that, at most, a reducer will have to remote read M files. For adistributed file system, this could incur higher overheads, but on a local file system, this simplified the master's work significantly.
